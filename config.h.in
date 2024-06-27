@@ -1,0 +1,3 @@
+#cmakedefine LCORE_ENABLE_RECORDSTACK
+#cmakedefine LCORE_ENABLE_ASSERT
+#cmakedefine LCORE_DEBUG

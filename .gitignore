@@ -1,0 +1,15 @@
+# VSCode
+.vscode/
+
+# CMake folder
+build/
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+CMakeScripts/
+CMakeSettings.json
+
+# C++ 20 Moudle Cache
+*.pcm
+

@@ -6,14 +6,26 @@ set(CMAKE_CXX_STANDARD 20)
 option(LCORE_ENABLE_RECORDSTACK "Enable record stack" ON)
 option(LCORE_ENABLE_ASSERT "Enable assert" ON)
 
+if (NOT DEFINED LCORE_NAMESAPCE_NAME)
+    set(LCORE_NAMESAPCE_NAME "lcore" CACHE STRING "Namespace name")
+endif()
+
+if (LCORE_NAMESAPCE_NAME STREQUAL "")
+    set(LCORE_NAMESAPCE_BEGIN "")
+    set(LCORE_NAMESAPCE_END "")
+else()
+    set(LCORE_NAMESAPCE_BEGIN "namespace ${LCORE_NAMESAPCE_NAME} {")
+    set(LCORE_NAMESAPCE_END "}")
+endif()
+
 set(LCORE_DEBUG OFF)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(LCORE_DEBUG ON)
 endif()
 
 configure_file(
-    ${CMAKE_SOURCE_DIR}/config.h.in
-    ${CMAKE_SOURCE_DIR}/include/config.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/config.h
 )
 
 FILE(GLOB_RECURSE SRC_FILES src/*.c*)

@@ -32,4 +32,9 @@ public:
     virtual ~AbstractClass() = default;
 };
 
+/// @brief Just identify the class as an interface
+/// User code should implement the interface themselves, this class is just a mark
+class Interface {
+};
+
 LCORE_NAMESAPCE_END

@@ -23,3 +23,6 @@
 #else
 #define LCORE_ASSERT(condition, msg) do {} while (0)
 #endif
+
+#include <iostream>
+#define LCORE_FATAL(msg) do {std::cerr << msg << std::endl; exit(-1);} while (0)

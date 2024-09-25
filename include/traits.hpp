@@ -150,6 +150,9 @@ concept CanConvTo = std::is_convertible_v<T, U>;
 template <size_t index, typename ...Args>
 using NthType = std::tuple_element_t<index, std::tuple<Args...>>;
 
+template <size_t index, typename Tuple>
+using NthTypeOfTuple = std::tuple_element_t<index, Tuple>;
+
 
 template <typename T, typename ...Args>
 struct _IndexOf;
@@ -187,5 +190,59 @@ using EnableIf = std::enable_if_t<Cond, T>;
 
 template <bool Cond, typename T, typename F>
 using Conditional = std::conditional_t<Cond, T, F>;
+
+template <typename T>
+concept DefaultConstructible = std::is_default_constructible_v<T>;
+
+template <typename T>
+concept CopyConstructible = std::is_copy_constructible_v<T>;
+
+template <typename T>
+concept MoveConstructible = std::is_move_constructible_v<T>;
+
+template <typename T>
+concept CopyAssignable = std::is_copy_assignable_v<T>;
+
+template <typename T>
+concept MoveAssignable = std::is_move_assignable_v<T>;
+
+template <typename T>
+concept Destructible = std::is_destructible_v<T>;
+
+// RemoveNthOfTuple
+template <size_t index, typename Tuple>
+struct _RemoveNthOfTuple;
+
+template <size_t index, typename ...Args>
+struct _RemoveNthOfTuple<index, std::tuple<Args...>>{
+    using type = typename _RemoveNthOfTuple<index - 1, std::tuple<Args...>>::type;
+};
+
+template <typename First, typename ...Args>
+struct _RemoveNthOfTuple<0, std::tuple<First, Args...>>{
+    using type = std::tuple<Args...>;
+};
+
+template <size_t index, typename Tuple>
+using RemoveNthOfTuple = typename _RemoveNthOfTuple<index, Tuple>::type;
+
+#ifdef LCORE_TRAITS_USE_COROUTINE
+#include <coroutine>
+
+template <typename T>
+concept HasCoAwaitOperator = requires(T t){
+    {t.operator co_await()} -> IsSame<std::suspend_always>;
+};
+
+template <typename T>
+concept __IsAwaitable = requires(T t){
+    {t.await_ready()} -> std::same_as<bool>;
+    {t.await_suspend()} -> std::same_as<std::coroutine_handle<>>;
+    {t.await_resume()} -> std::same_as<typename T::value_type>;
+};
+
+template <typename T>
+concept IsAwaitable = HasCoAwaitOperator<T> || __IsAwaitable<T>;
+#endif
 
 LCORE_NAMESAPCE_END

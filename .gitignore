@@ -13,3 +13,5 @@ CMakeSettings.json
 # C++ 20 Moudle Cache
 *.pcm
 
+# configure file
+/config.h

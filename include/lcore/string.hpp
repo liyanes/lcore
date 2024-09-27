@@ -4,7 +4,7 @@
 #include <string_view>
 #include <sstream>
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 class String;
 class StringStream;
@@ -98,4 +98,4 @@ inline bool String::isdigit() const noexcept {
     return true;
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

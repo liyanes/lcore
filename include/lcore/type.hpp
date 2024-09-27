@@ -4,7 +4,7 @@
 #include <string>
 #include <cxxabi.h>
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 /// @brief Demangle a type name
 /// @param name The type name
@@ -36,4 +36,4 @@ inline const std::type_info& GetNthType(size_t n){
     return *types[n];
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

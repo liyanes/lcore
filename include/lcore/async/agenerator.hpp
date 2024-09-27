@@ -5,7 +5,7 @@
 #define LCORE_TRAITS_USE_COROUTINE
 #include "../traits.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 // Due to the lack of support for async generator in C++20/23, we need to implement it ourselves
 // the returns of begin() and end() will be awaitable objects, and the generator will be a coroutine
@@ -152,4 +152,4 @@ public:
     }
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

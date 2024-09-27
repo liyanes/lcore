@@ -2,7 +2,7 @@
 #include "../traits.hpp"
 #include "task.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 template <typename InitRet, typename ...InitArgs>
 class AsyncContext: AbstractClass {
@@ -21,4 +21,4 @@ public:
     }
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

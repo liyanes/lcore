@@ -6,7 +6,7 @@
 #include "../exception.hpp"
 #include <map>
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 class TypeInfo;
 class Object;
@@ -40,5 +40,5 @@ inline Ptr<Object> TypeId::Constructe() const{
     return (*this)->constructor();
 }
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END
 

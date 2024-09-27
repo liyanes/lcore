@@ -812,9 +812,9 @@ constexpr inline bool enable_view<generator<_T, _U, _Alloc>> = true;
 
 #endif
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 template <typename T>
 using Generator = std::generator<T>;
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

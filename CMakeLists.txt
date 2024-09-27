@@ -9,16 +9,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmodules-ts")
 option(LCORE_ENABLE_RECORDSTACK "Enable record stack" ON)
 option(LCORE_ENABLE_ASSERT "Enable assert" ON)
 
-if (NOT DEFINED LCORE_NAMESAPCE_NAME)
-    set(LCORE_NAMESAPCE_NAME "lcore" CACHE STRING "Namespace name")
+if (NOT DEFINED LCORE_NAMESPACE_NAME)
+    set(LCORE_NAMESPACE_NAME "lcore" CACHE STRING "Namespace name")
 endif()
 
-if (LCORE_NAMESAPCE_NAME STREQUAL "")
-    set(LCORE_NAMESAPCE_BEGIN "")
-    set(LCORE_NAMESAPCE_END "")
+if (LCORE_NAMESPACE_NAME STREQUAL "")
+    set(LCORE_NAMESPACE_BEGIN "")
+    set(LCORE_NAMESPACE_END "")
 else()
-    set(LCORE_NAMESAPCE_BEGIN "namespace ${LCORE_NAMESAPCE_NAME} {")
-    set(LCORE_NAMESAPCE_END "}")
+    set(LCORE_NAMESPACE_BEGIN "namespace ${LCORE_NAMESPACE_NAME} {")
+    set(LCORE_NAMESPACE_END "}")
 endif()
 
 set(LCORE_DEBUG OFF)
@@ -28,7 +28,7 @@ endif()
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/config.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/config.h
 )
 
 FILE(GLOB_RECURSE SRC_FILES src/*.c*)
@@ -37,7 +37,7 @@ FILE(GLOB_RECURSE INC_FILES include/*.h)
 include_directories(include)
 add_library(lcore ${SRC_FILES} ${INC_FILES})
 
-option(LCORE_ENABLE_TEST "Enable test for lcore" ON)
+option(LCORE_ENABLE_TEST "Enable test for lcore" OFF)
 
 if (LCORE_ENABLE_TEST)
     enable_testing()

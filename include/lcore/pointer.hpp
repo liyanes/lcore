@@ -3,7 +3,7 @@
 #include "base.hpp"
 #include "traits.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 /// @brief Raw pointer
 /// @tparam T The type of the pointer
@@ -185,4 +185,4 @@ public:
     };
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

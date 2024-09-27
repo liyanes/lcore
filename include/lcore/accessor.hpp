@@ -5,7 +5,7 @@
 #include "class.hpp"
 #include <functional>
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 /// @brief Accessor base class
 /// @tparam T The type of the accessor
@@ -80,7 +80,7 @@ inline Accessor<ResultCallable<FGet>> MakeAccessor(const FGet& get, const FSet& 
 template <typename FGet, typename FSet>
 inline Accessor<ResultCallable<FGet>> MakeAccessor(const FGet& get, const FSet& set);
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END
 
 
 

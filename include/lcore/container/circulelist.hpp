@@ -3,7 +3,7 @@
 #include <cstddef>
 #include "../traits.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 template <typename T>
 class __CircularListNode {
@@ -211,5 +211,5 @@ public:
     }
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END
 

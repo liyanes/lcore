@@ -7,7 +7,7 @@
 #include "traits.hpp"
 #include <vector>
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 
 /// @brief Get the string representation of a value
@@ -45,7 +45,7 @@ inline std::vector<std::string> repr(Args&&... args){
 }
 
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END
 
 template <typename T>
 struct fmt::formatter<std::shared_ptr<T>>: public fmt::formatter<std::string_view> {

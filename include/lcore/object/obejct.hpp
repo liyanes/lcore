@@ -18,7 +18,7 @@
 #include <map>
 #include <typeinfo>
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 class Object;
 
@@ -116,4 +116,4 @@ public:
     }
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <ranges>
 
-using namespace LCORE_NAMESAPCE_NAME;
+using namespace LCORE_NAMESPACE_NAME;
 
 Generator<int> yiledtest(){
     co_yield 1;

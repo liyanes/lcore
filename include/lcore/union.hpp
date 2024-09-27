@@ -1,7 +1,7 @@
 #pragma once
 #include "base.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 /// @brief Type-safe union
 /// @tparam ...Args The types of the union
@@ -54,4 +54,4 @@ public:
     }
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

@@ -1,6 +1,6 @@
 #include "../container.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 template <Iterable... Containers>
 class zip {
@@ -209,4 +209,4 @@ public:
 // };
 
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

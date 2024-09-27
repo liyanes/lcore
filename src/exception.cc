@@ -1,8 +1,9 @@
-#include "exception.hpp"
+#include "lcore/exception.hpp"
+#include "lcore/config.h"
 #include <execinfo.h>
 #include <iostream>
 
-using namespace lcore;
+using namespace LCORE_NAMESPACE_NAME;
 
 std::vector<const char*> lcore::GetStacktrace(int skip, int size){
     void *buffer[LCORE_STACKTRACE_SIZE];

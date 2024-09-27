@@ -5,7 +5,7 @@
 #include <utility>
 #include <optional>
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 template <typename T>
 class Task;
@@ -187,5 +187,5 @@ public:
     }
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END
 

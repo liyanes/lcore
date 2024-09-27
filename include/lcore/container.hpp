@@ -5,7 +5,7 @@
 #include <functional>
 #include "traits.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 /**
  * @brief Const Container View
@@ -211,5 +211,5 @@ public:
     }
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END
 

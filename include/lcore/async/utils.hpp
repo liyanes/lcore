@@ -1,7 +1,7 @@
 #include "generator.hpp"
 #include "../traits.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 template <Iterable First, Iterable ...Rest>
 Generator<std::tuple<RemoveReference<decltype(*std::declval<First>().begin())> , RemoveReference<decltype(*std::declval<Rest>().begin())>...>> _product(const First& first, const Rest&... rest){
@@ -24,4 +24,4 @@ auto product(Containers&&... containers){
     return _product(std::forward<Containers>(containers)...);
 }
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

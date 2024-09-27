@@ -14,6 +14,6 @@
 #error "This library requires C++20 or later"
 #endif
 
-// #define LCORE_NAMESAPCE_BEGIN namespace lcore {
-// #define LCORE_NAMESAPCE_END }
+// #define LCORE_NAMESPACE_BEGIN namespace lcore {
+// #define LCORE_NAMESPACE_END }
 #include "config.h"

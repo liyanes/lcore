@@ -4,7 +4,7 @@
 #include <cstddef>
 #include "base.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 template <typename T>
 concept Number = std::is_arithmetic_v<T>;
@@ -245,4 +245,4 @@ template <typename T>
 concept IsAwaitable = HasCoAwaitOperator<T> || __IsAwaitable<T>;
 #endif
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

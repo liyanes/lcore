@@ -8,7 +8,7 @@
 
 #define LCORE_STACKTRACE_SIZE 64
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 /// @brief Get the stacktrace
 /// @param skip The number of stack frames to skip
@@ -89,6 +89,6 @@ public:
     }
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END
 
 #define LCORE_NOTIMPLEMENTED() do {throw lcore::NotImplementedError(__func__, __FILE__, __LINE__);} while(0)

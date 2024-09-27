@@ -1,7 +1,7 @@
 #pragma once
 #include "base.hpp"
 
-LCORE_NAMESAPCE_BEGIN
+LCORE_NAMESPACE_BEGIN
 
 /// @brief Singleton class
 /// @tparam BaseClass The class to be created as a singleton
@@ -37,4 +37,4 @@ public:
 class Interface {
 };
 
-LCORE_NAMESAPCE_END
+LCORE_NAMESPACE_END

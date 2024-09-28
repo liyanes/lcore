@@ -20,13 +20,6 @@ public:
     TypeId& operator=(TypeId&&) = default;
 
     inline Ptr<Object> Constructe() const;
-
-    inline bool operator==(const TypeId& other) const noexcept {
-        return this->ptr == other.ptr;
-    }
-    inline bool operator==(nullptr_t) const noexcept {
-        return this->ptr == nullptr;
-    }
 };
 
 class TypeInfo {

@@ -9,6 +9,8 @@ LCORE_NAMESPACE_BEGIN
 /// @tparam T The type of the pointer
 template <typename T>
 class RawPtr {
+    template <typename U>
+    friend class RawPtr;
 protected:
     T* ptr = nullptr;
 public:
@@ -28,9 +30,13 @@ public:
     inline const T& operator*() const noexcept {return *ptr;}
     inline operator bool() const noexcept {return ptr != nullptr;}
     inline bool operator==(const RawPtr<T>& ptr) const noexcept {return this->ptr == ptr.ptr;}
-    inline bool operator!=(const RawPtr<T>& ptr) const noexcept {return this->ptr != ptr.ptr;}
     inline bool operator==(std::nullptr_t) const noexcept {return ptr == nullptr;}
+    inline bool operator!=(const RawPtr<T>& ptr) const noexcept {return this->ptr != ptr.ptr;}
     inline bool operator!=(std::nullptr_t) const noexcept {return ptr != nullptr;}
+    inline bool operator<(const RawPtr<T>& ptr) const noexcept {return this->ptr < ptr.ptr;}
+    inline bool operator>(const RawPtr<T>& ptr) const noexcept {return this->ptr > ptr.ptr;}
+    inline bool operator<=(const RawPtr<T>& ptr) const noexcept {return this->ptr <= ptr.ptr;}
+    inline bool operator>=(const RawPtr<T>& ptr) const noexcept {return this->ptr >= ptr.ptr;}
 
     inline constexpr bool IsConst() const noexcept {return std::is_const_v<T>;}
     inline T* Get() const noexcept {return ptr;}
@@ -54,6 +60,11 @@ public:
     template <typename U>
     inline RawPtr<U> ReinterpretCast() const noexcept {
         return reinterpret_cast<U*>(ptr);
+    }
+
+    inline void Delete() noexcept {
+        delete ptr;
+        ptr = nullptr;
     }
 };
 
@@ -108,6 +119,12 @@ public:
     requires IsDerivedFrom<U, T>
     inline Ptr<U> ReinterpretCast() const noexcept {
         return std::reinterpret_pointer_cast<U>(*this);
+    };
+
+    /// @brief Get the raw pointer
+    /// @return RawPtr<T> The raw pointer
+    inline RawPtr<T> Get() const noexcept {
+        return std::shared_ptr<T>::get();
     };
 };
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "../config.h"
-#include "class.hpp"
+#include "../class.hpp"
 #include <coroutine>
 #include <utility>
 #include <optional>

@@ -5,7 +5,7 @@
 
 using namespace LCORE_NAMESPACE_NAME;
 
-std::vector<const char*> lcore::GetStacktrace(int skip, int size){
+std::vector<const char*> LCORE_NAMESPACE_NAME::GetStacktrace(int skip, size_t size){
     void *buffer[LCORE_STACKTRACE_SIZE];
     size_t stacktrace_size = backtrace(buffer, LCORE_STACKTRACE_SIZE);
     char **stacktrace = backtrace_symbols(buffer, stacktrace_size);
@@ -23,6 +23,9 @@ std::vector<const char*> lcore::GetStacktrace(int skip, int size){
     return result;
 }
 
+#ifdef LCORE_ENABLE_RECORDSTACK
+Exception::Exception(): m_stacktrace(GetStacktrace(1)) {}
+
 void Exception::PrintBacktrace() const {
     for (const auto& line: m_stacktrace){
         std::cerr << line << std::endl;
@@ -32,3 +35,4 @@ void Exception::PrintBacktrace() const {
 std::vector<const char*> Exception::GetBackTrace() const& {
     return m_stacktrace;
 }
+#endif

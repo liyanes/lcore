@@ -1,11 +1,11 @@
-#include <async/utils.hpp>
-#include <traits.hpp>
+#include <lcore/async/utils.hpp>
+#include <lcore/traits.hpp>
 #include <vector>
 #include <list>
 #include <iostream>
 #include <tuple>
 
-using namespace lcore;
+using namespace LCORE_NAMESPACE_NAME;
 
 int main(){
     std::vector<int> vec = {1, 2, 3, 4, 5};

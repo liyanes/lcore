@@ -112,8 +112,13 @@ public:
 };
 
 template <typename T, typename... Args>
-inline constexpr Ptr<T> MakePtr(Args&&... args) {
+inline Ptr<T> MakePtr(Args&&... args) {
     return Ptr<T>(new T(std::forward<Args>(args)...));
+};
+
+template <typename T, typename... Args>
+inline Ptr<T> New(Args&&... args) {
+    return MakePtr<T>(std::forward<Args>(args)...);
 };
 
 /// @brief Unique pointer

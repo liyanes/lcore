@@ -1,6 +1,7 @@
 #pragma once
 #include <exception>
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <vector>
 #include "base.hpp"
@@ -14,7 +15,7 @@ LCORE_NAMESPACE_BEGIN
 /// @param skip The number of stack frames to skip
 /// @param size The number of stack frames to get, if the size is greater than LCORE_STACKTRACE_SIZE, the result will be truncated
 /// @return The stacktrace
-std::vector<const char*> GetStacktrace(int skip = 0, int size = LCORE_STACKTRACE_SIZE);
+std::vector<const char*> GetStacktrace(int skip = 0, size_t size = LCORE_STACKTRACE_SIZE);
 
 /// @brief The base class of all exceptions in lcore
 class Exception: public std::exception {
@@ -54,7 +55,7 @@ class NotImplementedError final: public RuntimeError {
     const char* m_file;
     int m_line;
 public:
-    NotImplementedError(const char* func, const char* file, int line): m_func(func), m_file(file), m_line(line), RuntimeError("Not implemented") {}
+    NotImplementedError(const char* func, const char* file, int line): RuntimeError("Not implemented"), m_func(func), m_file(file), m_line(line) {}
     inline const char* what() const noexcept override {
         if (m_msg.empty()){
             std::stringstream oss;
@@ -78,11 +79,10 @@ public:
 class SystemError: public Exception {
 protected:
     int m_errno;
-    const char* m_msg;
 public:
-    SystemError(int errno_, const char* msg): m_errno(errno_), m_msg(msg) {}
+    SystemError(int errno_): m_errno(errno_) {}
     inline const char* what() const noexcept override {
-        return m_msg;
+        return strerror(m_errno);
     }
     inline int GetErrno() const noexcept {
         return m_errno;
@@ -91,4 +91,4 @@ public:
 
 LCORE_NAMESPACE_END
 
-#define LCORE_NOTIMPLEMENTED() do {throw lcore::NotImplementedError(__func__, __FILE__, __LINE__);} while(0)
+#define LCORE_NOTIMPLEMENTED() do {throw LCORE_NAMESPACE_NAME::NotImplementedError(__func__, __FILE__, __LINE__);} while(0)

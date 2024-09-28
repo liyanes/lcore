@@ -40,7 +40,7 @@ public:
 class StringStream: public std::stringstream {
 public:
     String str() const {
-        return this->str();
+        return std::stringstream::str();
     };
 };
 

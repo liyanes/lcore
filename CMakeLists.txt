@@ -37,6 +37,9 @@ FILE(GLOB_RECURSE INC_FILES include/*.h)
 include_directories(include)
 add_library(lcore ${SRC_FILES} ${INC_FILES})
 
+# add postfix if debug
+set_target_properties(lcore PROPERTIES DEBUG_POSTFIX "d")
+
 option(LCORE_ENABLE_TEST "Enable test for lcore" OFF)
 
 if (LCORE_ENABLE_TEST)

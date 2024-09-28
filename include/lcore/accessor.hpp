@@ -13,7 +13,7 @@ template <typename T>
 class AccessorBase: AbstractClass {
     /// @brief Get the value
     /// @return The value
-    virtual const T& Get() const = 0;
+    virtual const T Get() const = 0;
     /// @brief Set the value
     /// @param value The value to be set
     virtual void Set(const T& value) = 0;
@@ -29,7 +29,7 @@ class AccessorPtrImpl: public AccessorBase<T> {
 public:
     inline AccessorPtrImpl(T* ptr);
     inline AccessorPtrImpl(RawPtr<T> ptr);
-    inline const T& Get() const override;
+    inline const T Get() const override;
     inline void Set(const T& value) override;
     inline void Delete() override;
 
@@ -44,7 +44,7 @@ template <typename FGet, typename FSet, typename FDelete>
 requires IsCallable<FSet, ResultCallable<FGet>> && IsCallable<FDelete>
 class AccessorFuncImpl: public AccessorBase<ResultCallable<FGet>> {
 public:
-    using T = ResultCallable<FGet>;
+    using RetType = ResultCallable<FGet>;
 private:
     FGet m_get;
     FSet m_set;
@@ -52,8 +52,8 @@ private:
 public:
     inline AccessorFuncImpl(const FGet& get, const FSet& set, const FDelete& del);
     inline AccessorFuncImpl(FGet&& get, FSet&& set, FDelete&& del);
-    inline const T& Get() const override;
-    inline void Set(const T& value) override;
+    inline const RetType Get() const override;
+    inline void Set(const RetType& value) override;
     inline void Delete() override;
 };
 
@@ -80,98 +80,103 @@ inline Accessor<ResultCallable<FGet>> MakeAccessor(const FGet& get, const FSet& 
 template <typename FGet, typename FSet>
 inline Accessor<ResultCallable<FGet>> MakeAccessor(const FGet& get, const FSet& set);
 
+template <typename TType, typename FType>
+requires IsDerivedFrom<TType, FType>
+inline Accessor<Ptr<FType>> CreatePtrAccessor(Ptr<TType>* pptr) {
+    return MakeAccessor([pptr]()->Ptr<FType>{return *pptr;}, [pptr](Ptr<FType> value){*pptr = std::dynamic_pointer_cast<TType>(value);});
+}
+
 LCORE_NAMESPACE_END
 
-
-
 template <typename T>
-inline void lcore::AccessorBase<T>::Delete() {
-    throw NotImplementedError(__func__, __FILE__, __LINE__);
+inline void LCORE_NAMESPACE_NAME::AccessorBase<T>::Delete() {
+    LCORE_NOTIMPLEMENTED();
 }
 
 template <typename T>
-inline lcore::AccessorPtrImpl<T>::AccessorPtrImpl(T* ptr): m_ptr(ptr) {}
+inline LCORE_NAMESPACE_NAME::AccessorPtrImpl<T>::AccessorPtrImpl(T* ptr): m_ptr(ptr) {}
 
 template <typename T>
-inline lcore::AccessorPtrImpl<T>::AccessorPtrImpl(RawPtr<T> ptr): m_ptr(ptr) {}
+inline LCORE_NAMESPACE_NAME::AccessorPtrImpl<T>::AccessorPtrImpl(RawPtr<T> ptr): m_ptr(ptr) {}
 
 template <typename T>
-inline const T& lcore::AccessorPtrImpl<T>::Get() const {
+inline const T LCORE_NAMESPACE_NAME::AccessorPtrImpl<T>::Get() const {
     return *m_ptr;
 }
 
 template <typename T>
-inline void lcore::AccessorPtrImpl<T>::Set(const T& value) {
+inline void LCORE_NAMESPACE_NAME::AccessorPtrImpl<T>::Set(const T& value) {
     *m_ptr = value;
 }
 
 template <typename T>
-inline void lcore::AccessorPtrImpl<T>::Delete() {
+inline void LCORE_NAMESPACE_NAME::AccessorPtrImpl<T>::Delete() {
     delete m_ptr.Get();
 }
 
 template <typename T>
-inline lcore::RawPtr<T> lcore::AccessorPtrImpl<T>::GetPtr() const noexcept {
+inline LCORE_NAMESPACE_NAME::RawPtr<T> LCORE_NAMESPACE_NAME::AccessorPtrImpl<T>::GetPtr() const noexcept {
     return m_ptr;
 }
 
 template <typename FGet, typename FSet, typename FDelete>
-inline lcore::AccessorFuncImpl<FGet, FSet, FDelete>::AccessorFuncImpl(const FGet& get, const FSet& set, const FDelete& del): m_get(get), m_set(set), m_delete(del) {}
+inline LCORE_NAMESPACE_NAME::AccessorFuncImpl<FGet, FSet, FDelete>::AccessorFuncImpl(const FGet& get, const FSet& set, const FDelete& del): m_get(get), m_set(set), m_delete(del) {}
 
 template <typename FGet, typename FSet, typename FDelete>
-inline lcore::AccessorFuncImpl<FGet, FSet, FDelete>::AccessorFuncImpl(FGet&& get, FSet&& set, FDelete&& del): m_get(std::move(get)), m_set(std::move(set)), m_delete(std::move(del)) {}
+inline LCORE_NAMESPACE_NAME::AccessorFuncImpl<FGet, FSet, FDelete>::AccessorFuncImpl(FGet&& get, FSet&& set, FDelete&& del): m_get(std::move(get)), m_set(std::move(set)), m_delete(std::move(del)) {}
 
 template <typename FGet, typename FSet, typename FDelete>
-inline const typename lcore::AccessorFuncImpl<FGet, FSet, FDelete>::T& lcore::AccessorFuncImpl<FGet, FSet, FDelete>::Get() const {
+inline const typename LCORE_NAMESPACE_NAME::AccessorFuncImpl<FGet, FSet, FDelete>::RetType LCORE_NAMESPACE_NAME::AccessorFuncImpl<FGet, FSet, FDelete>::Get() const {
     return m_get();
 }
 
 template <typename FGet, typename FSet, typename FDelete>
-inline void lcore::AccessorFuncImpl<FGet, FSet, FDelete>::Set(const typename lcore::AccessorFuncImpl<FGet, FSet, FDelete>::T& value) {
+inline void LCORE_NAMESPACE_NAME::AccessorFuncImpl<FGet, FSet, FDelete>::Set(const typename LCORE_NAMESPACE_NAME::AccessorFuncImpl<FGet, FSet, FDelete>::RetType& value) {
     m_set(value);
 }
 
 template <typename FGet, typename FSet, typename FDelete>
-inline void lcore::AccessorFuncImpl<FGet, FSet, FDelete>::Delete() {
+inline void LCORE_NAMESPACE_NAME::AccessorFuncImpl<FGet, FSet, FDelete>::Delete() {
     m_delete();
 }
 
 template <typename T>
-inline lcore::Accessor<T>::Accessor(lcore::Ptr<lcore::AccessorBase<T>> ptr): Ptr(ptr) {}
+inline LCORE_NAMESPACE_NAME::Accessor<T>::Accessor(LCORE_NAMESPACE_NAME::Ptr<LCORE_NAMESPACE_NAME::AccessorBase<T>> ptr): Ptr<AccessorBase<T>>(ptr) {}
 
 template <typename T>
-inline const T& lcore::Accessor<T>::Get() const {
-    return Ptr::Get()->Get();
+inline const T& LCORE_NAMESPACE_NAME::Accessor<T>::Get() const {
+    return Ptr<AccessorBase<T>>::operator->().Get();
 }
 
 template <typename T>
-inline void lcore::Accessor<T>::Set(const T& value) {
-    Ptr::Get()->Set(value);
+inline void LCORE_NAMESPACE_NAME::Accessor<T>::Set(const T& value) {
+    Ptr<AccessorBase<T>>::operator->().Set(value);
 }
 
 template <typename T>
-inline void lcore::Accessor<T>::Delete() {
-    Ptr::Get()->Delete();
+inline void LCORE_NAMESPACE_NAME::Accessor<T>::Delete() {
+    Ptr<AccessorBase<T>>::operator->().Delete();
 }
 
 template <typename T>
-inline lcore::Accessor<T> lcore::MakeAccessor(T* ptr) {
+inline LCORE_NAMESPACE_NAME::Accessor<T> LCORE_NAMESPACE_NAME::MakeAccessor(T* ptr) {
     return Ptr<AccessorBase<T>>(new AccessorPtrImpl<T>(ptr));
 }
 
 template <typename T>
-inline lcore::Accessor<T> lcore::MakeAccessor(RawPtr<T> ptr) {
+inline LCORE_NAMESPACE_NAME::Accessor<T> LCORE_NAMESPACE_NAME::MakeAccessor(RawPtr<T> ptr) {
     return Ptr<AccessorBase<T>>(new AccessorPtrImpl<T>(ptr));
 }
 
 template <typename FGet, typename FSet, typename FDelete>
-inline lcore::Accessor<lcore::ResultCallable<FGet>> lcore::MakeAccessor(const FGet& get, const FSet& set, const FDelete& del) {
+inline LCORE_NAMESPACE_NAME::Accessor<LCORE_NAMESPACE_NAME::ResultCallable<FGet>> LCORE_NAMESPACE_NAME::MakeAccessor(const FGet& get, const FSet& set, const FDelete& del) {
     return Ptr<AccessorBase<ResultCallable<FGet>>>(new AccessorFuncImpl<FGet, FSet, FDelete>(get, set, del));
 }
 
 template <typename FGet, typename FSet>
-inline lcore::Accessor<lcore::ResultCallable<FGet>> lcore::MakeAccessor(const FGet& get, const FSet& set) {
-    return Ptr<AccessorBase<ResultCallable<FGet>>>(new AccessorFuncImpl<FGet, FSet, auto>(get, set, [](){
+inline LCORE_NAMESPACE_NAME::Accessor<LCORE_NAMESPACE_NAME::ResultCallable<FGet>> LCORE_NAMESPACE_NAME::MakeAccessor(const FGet& get, const FSet& set) {
+    auto del = [](){
         LCORE_NOTIMPLEMENTED();
-    }));
+    };
+    return Ptr<AccessorBase<ResultCallable<FGet>>>(new AccessorFuncImpl<FGet, FSet, decltype(del)>(get, set, del));
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "base.hpp"
+#include <variant>
 
 LCORE_NAMESPACE_BEGIN
 

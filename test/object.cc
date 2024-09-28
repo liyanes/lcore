@@ -1,6 +1,6 @@
-#include <object/obejct.hpp>
+#include <lcore/object/obejct.hpp>
 
-using namespace lcore;
+using namespace LCORE_NAMESPACE_NAME;
 
 class A: public Object {
 public:

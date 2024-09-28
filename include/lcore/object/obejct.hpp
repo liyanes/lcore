@@ -46,6 +46,7 @@ public:
             }
         }
         // Free the aggregator, ignore the shared_ref_count varible
+        delete &*obj->aggregator;
         obj->aggregator = this;
     }
 
@@ -63,7 +64,7 @@ public:
     Ptr<T> GetObject(){
         auto it = objects.find(T::GetTypeId());
         if (it != objects.end()){
-            return it->second.Cast<T>();
+            return std::dynamic_pointer_cast<T>(it->second);
         }
         return nullptr;
     }
@@ -78,9 +79,16 @@ private:
     RawPtr<Aggregator> aggregator;
 public:
     Object(): aggregator(new Aggregator()){};
-    Object(const Object& obj): aggregator(obj.aggregator){};
+    Object(const Object& obj): aggregator(obj.aggregator){
+        aggregator->shared_ref_count++;
+    };
     Object(Object&& obj): aggregator(std::move(obj.aggregator)){};
-    ~Object(){};
+    ~Object(){
+        aggregator->shared_ref_count--;
+        if (aggregator->shared_ref_count == 0){
+            delete &*aggregator;
+        }
+    };
     Object& operator=(const Object& obj){
         aggregator = obj.aggregator;
         return *this;

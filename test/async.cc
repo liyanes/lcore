@@ -1,6 +1,6 @@
-#include <async/task.hpp>
-#include <async/generator.hpp>
-#include <async/agenerator.hpp>
+#include <lcore/async/task.hpp>
+#include <lcore/async/generator.hpp>
+#include <lcore/async/agenerator.hpp>
 #include <iostream>
 #include <ranges>
 

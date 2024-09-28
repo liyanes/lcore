@@ -1,7 +1,7 @@
-#include <container/circulelist.hpp>
+#include <lcore/container/circulelist.hpp>
 #include <iostream>
 
-using namespace lcore;
+using namespace LCORE_NAMESPACE_NAME;
 
 int main(){
     CircularList<int> list;

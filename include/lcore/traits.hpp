@@ -45,6 +45,15 @@ concept IsTrue = std::bool_constant<T>::value;
 template <typename T>
 using RemoveReference = std::remove_reference_t<T>;
 
+template <typename T>
+using RemoveConst = std::remove_const_t<T>;
+
+template <typename T>
+using RemoveVolatile = std::remove_volatile_t<T>;
+
+template <typename T>
+using RemoveCV = std::remove_cv_t<T>;
+
 template <typename Func, typename ...Args>
 concept IsCallable = requires(Func func, Args... args){
     { func(args...) };
@@ -225,6 +234,57 @@ struct _RemoveNthOfTuple<0, std::tuple<First, Args...>>{
 
 template <size_t index, typename Tuple>
 using RemoveNthOfTuple = typename _RemoveNthOfTuple<index, Tuple>::type;
+
+/// ======== Function parameters ========
+// Get the nth parameter type of a callable object
+
+template <size_t index, typename CallableObject>
+struct _NthParameterType;
+
+
+// For function type
+template <size_t index, typename Ret, typename ...Args>
+struct _NthParameterType<index, Ret(Args...)>{
+    using type = NthType<index, Args...>;
+};
+
+// For function pointer type
+template <size_t index, typename Ret, typename ...Args>
+struct _NthParameterType<index, Ret(*)(Args...)>{
+    using type = NthType<index, Args...>;
+};
+
+// For function reference type
+template <size_t index, typename Ret, typename ...Args>
+struct _NthParameterType<index, Ret(&)(Args...)>{
+    using type = NthType<index, Args...>;
+};
+
+// For member function type
+template <size_t index, typename Class, typename Ret, typename ...Args>
+struct _NthParameterType<index, Ret(Class::*)(Args...)>{
+    using type = NthType<index, Args...>;
+};
+
+// For member const function type
+template <size_t index, typename Class, typename Ret, typename ...Args>
+struct _NthParameterType<index, Ret(Class::*)(Args...) const>{
+    using type = NthType<index, Args...>;
+};
+
+// For lambda type
+template <size_t index, typename CallableObject>
+struct _NthParameterType{
+    using type = typename _NthParameterType<index, decltype(&CallableObject::operator())>::type;
+};
+
+template <size_t index, typename CallableObject>
+using NthParameterType = typename _NthParameterType<index, CallableObject>::type;
+
+template <typename CallableObject>
+using FirstParameterType = NthParameterType<0, CallableObject>;
+
+/// ====================================
 
 #ifdef LCORE_TRAITS_USE_COROUTINE
 #include <coroutine>

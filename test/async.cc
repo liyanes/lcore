@@ -3,6 +3,7 @@
 #include <lcore/async/agenerator.hpp>
 #include <iostream>
 #include <ranges>
+#include <memory>
 
 using namespace LCORE_NAMESPACE_NAME;
 
@@ -10,6 +11,12 @@ Generator<int> yiledtest(){
     co_yield 1;
     co_yield 2;
     co_yield 3;
+}
+
+Generator<std::shared_ptr<int>> yiledtest2(){
+    co_yield std::make_shared<int>(1);
+    co_yield std::make_shared<int>(2);
+    co_yield std::make_shared<int>(3);
 }
 
 Generator<int> viewtest(){
@@ -44,6 +51,10 @@ int main(){
     std::cout << "For yiledtest:" << std::endl;
     for (auto i: yiledtest()){
         std::cout << i << std::endl;
+    }
+    std::cout << "For yiledtest2:" << std::endl;
+    for (auto i: yiledtest2()){
+        std::cout << *i << std::endl;
     }
     std::cout << "For viewtest:" << std::endl;
     for (auto i: viewtest() | std::views::take(10)){

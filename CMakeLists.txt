@@ -36,6 +36,9 @@ FILE(GLOB_RECURSE INC_FILES include/*.h)
 
 include_directories(include)
 add_library(lcore ${SRC_FILES} ${INC_FILES})
+set_target_properties(lcore PROPERTIES 
+    POSITION_INDEPENDENT_CODE ON
+)
 
 # add postfix if debug
 set_target_properties(lcore PROPERTIES DEBUG_POSTFIX "d")

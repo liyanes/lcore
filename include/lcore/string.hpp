@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <sstream>
+#include "traits.hpp"
 
 LCORE_NAMESPACE_BEGIN
 
@@ -25,6 +26,7 @@ public:
     using std::string::basic_string;
     inline String(const StringView view);
     inline String(std::string&& str);
+    inline String(char ch);
     
     inline String& operator=(const std::string& str);
     inline String& operator=(const StringView view);
@@ -35,6 +37,12 @@ public:
     inline StringView trim(size_t lpos, size_t rpos) const;
     inline StringView center(size_t lslice, size_t rslice) const;
     inline bool isdigit() const noexcept;
+
+    template <Iterable Container>
+    inline String Join(Container&& container);
+
+    template <Iterable Container>
+    inline static String Join(Container&& container, StringView sep);
 };
 
 class StringStream: public std::stringstream {
@@ -63,6 +71,8 @@ inline bool StringView::isdigit() const noexcept {
 
 inline String::String(const StringView view): std::string(view.begin(), view.end()) {}
 inline String::String(std::string&& str): std::string(str) {}
+inline String::String(char ch): std::string(1, ch) {}
+
 inline String& String::operator=(const std::string& str){
     std::string::operator=(str);
     return *this;
@@ -96,6 +106,23 @@ inline bool String::isdigit() const noexcept {
         if (!std::isdigit(c)) return false;
     }
     return true;
+};
+template <Iterable Container>
+inline String String::Join(Container&& container){
+    return Join(container, *this);
+};
+template <Iterable Container>
+inline String String::Join(Container&& container, StringView sep){
+    if (container.empty()) return "";
+    StringStream ss;
+    auto iter = container.begin();
+    while (true) {
+        ss << *iter;
+        ++iter;
+        if (iter != container.end()) ss << sep;
+        else break;
+    };
+    return ss.str();
 };
 
 LCORE_NAMESPACE_END

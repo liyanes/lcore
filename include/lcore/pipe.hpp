@@ -16,28 +16,40 @@
 LCORE_NAMESPACE_BEGIN
 
 template <typename Handler>
-requires (IsSame<ResultCallable<Handler, FirstParameterType<Handler>>, void> ||
-        IsSame<ResultCallable<Handler, FirstParameterType<Handler>>, bool>)
+requires IsOneOf<DeclReturnType<Handler>, void, bool>
 class Pipe {
     List<Handler> m_handlers;
 public:
-    using PipeDataType = FirstParameterType<Handler>;
+    using HandlerReturnType = DeclReturnType<Handler>;
+    using PipeReturnType = ParameterTuple<Handler>;
+
+    Pipe() {}
+    Pipe(const List<Handler>& handlers): m_handlers(handlers) {}
+    Pipe(List<Handler>&& handlers): m_handlers(std::move(handlers)) {}
+
+    inline void AddHandler(Handler&& handler){
+        m_handlers.push_back(std::move(handler));
+    }
     
-    inline EnableIf<IsSame<ResultCallable<Handler, FirstParameterType<Handler>>, void>, PipeDataType>& operator()(PipeDataType& param){
+    template <typename... Args>
+    requires IsSame<HandlerReturnType, void>
+    inline PipeReturnType operator()(Args... params){
         for (auto& handler: m_handlers){
-            handler(param);
+            handler(params...);
         }
-        return param;
+        return std::make_tuple(params...);
     }
 
-    inline EnableIf<IsSame<ResultCallable<Handler, FirstParameterType<Handler>>, bool>, PipeDataType>& operator()(PipeDataType& param){
+    template <typename... Args>
+    requires IsSame<HandlerReturnType, bool>
+    inline std::pair<bool, PipeReturnType> operator()(Args... params){
         for (auto& handler: m_handlers){
-            if (handler(param)){
+            if (handler(params...)){
                 // If handler returns true, stop the pipe progration
-                break;
+                return std::make_pair(true, std::make_tuple(params...));
             }
         }
-        return prarm;
+        return std::make_pair(false, std::make_tuple(params...));
     }
 };
 

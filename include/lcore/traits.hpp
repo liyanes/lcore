@@ -62,6 +62,9 @@ concept IsCallable = requires(Func func, Args... args){
 template <typename Func, typename ...Args>
 using ResultCallable = decltype(std::declval<Func>()(std::declval<Args>()...));
 
+template <typename Func, typename ArgsTuple>
+using ResultCallableOfTuple = decltype(std::apply(std::declval<Func>(), std::declval<ArgsTuple>()));
+
 template <typename T>
 concept IsConst = std::is_const_v<T>;
 
@@ -283,6 +286,73 @@ using NthParameterType = typename _NthParameterType<index, CallableObject>::type
 
 template <typename CallableObject>
 using FirstParameterType = NthParameterType<0, CallableObject>;
+
+// Count the number of parameters of a callable object
+template <typename CallableObject>
+struct _ParameterCount;
+
+template <typename Ret, typename ...Args>
+struct _ParameterCount<Ret(Args...)>: std::integral_constant<size_t, sizeof...(Args)> {};
+
+template <typename Ret, typename ...Args>
+struct _ParameterCount<Ret(*)(Args...)>: std::integral_constant<size_t, sizeof...(Args)> {};
+
+template <typename Ret, typename ...Args>
+struct _ParameterCount<Ret(&)(Args...)>: std::integral_constant<size_t, sizeof...(Args)> {};
+
+template <typename Class, typename Ret, typename ...Args>
+struct _ParameterCount<Ret(Class::*)(Args...)>: std::integral_constant<size_t, sizeof...(Args)> {};
+
+template <typename Class, typename Ret, typename ...Args>
+struct _ParameterCount<Ret(Class::*)(Args...) const>: std::integral_constant<size_t, sizeof...(Args)> {};
+
+template <typename CallableObject>
+struct _ParameterCount{
+    using type = typename _ParameterCount<decltype(&CallableObject::operator())>::type;
+};
+
+template <typename CallableObject>
+inline constexpr size_t ParameterCount = _ParameterCount<CallableObject>::type::value;
+
+// Tuple of parameter types
+template <typename CallableObject>
+struct _ParameterTuple;
+
+template <typename Ret, typename ...Args>
+struct _ParameterTuple<Ret(Args...)>{
+    using type = std::tuple<Args...>;
+};
+
+template <typename Ret, typename ...Args>
+struct _ParameterTuple<Ret(*)(Args...)>{
+    using type = std::tuple<Args...>;
+};
+
+template <typename Ret, typename ...Args>
+struct _ParameterTuple<Ret(&)(Args...)>{
+    using type = std::tuple<Args...>;
+};
+
+template <typename Class, typename Ret, typename ...Args>
+struct _ParameterTuple<Ret(Class::*)(Args...)>{
+    using type = std::tuple<Args...>;
+};
+
+template <typename Class, typename Ret, typename ...Args>
+struct _ParameterTuple<Ret(Class::*)(Args...) const>{
+    using type = std::tuple<Args...>;
+};
+
+template <typename CallableObject>
+struct _ParameterTuple{
+    using type = typename _ParameterTuple<decltype(&CallableObject::operator())>::type;
+};
+
+template <typename CallableObject>
+using ParameterTuple = typename _ParameterTuple<CallableObject>::type;
+
+template <typename CallableObject>
+using DeclReturnType = decltype(std::apply(std::declval<CallableObject>(), std::declval<ParameterTuple<CallableObject>>()));
 
 /// ====================================
 

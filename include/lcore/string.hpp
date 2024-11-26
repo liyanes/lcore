@@ -50,6 +50,9 @@ public:
     String str() const {
         return std::stringstream::str();
     };
+    void str(const std::string& str) {
+        return std::stringstream::str(str);
+    };
 };
 
 inline StringView::StringView(const std::string& string): std::string_view(string.begin(), string.end()) {}

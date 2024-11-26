@@ -9,12 +9,18 @@ LCORE_NAMESPACE_BEGIN
 template <typename BaseClass>
 class Singleton{
 public:
-    static BaseClass* Get() {
+    inline static BaseClass& Get() {
         /// @brief Instance of the singleton
-        static BaseClass* instance;
-        if (instance == nullptr) instance = new BaseClass();
+        static BaseClass instance;
         return instance;
     };
+private:
+    inline ~Singleton() = default;
+    inline Singleton() = default;
+    Singleton(const Singleton&) = delete;
+    Singleton(Singleton&&) = delete;
+    Singleton& operator=(const Singleton&) = delete;
+    Singleton& operator=(Singleton&&) = delete;
 };
 
 /// @brief Static class

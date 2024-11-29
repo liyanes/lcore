@@ -14,9 +14,10 @@ public:
         static BaseClass instance;
         return instance;
     };
-private:
+protected:
     inline ~Singleton() = default;
     inline Singleton() = default;
+public:
     Singleton(const Singleton&) = delete;
     Singleton(Singleton&&) = delete;
     Singleton& operator=(const Singleton&) = delete;

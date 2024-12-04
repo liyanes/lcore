@@ -10,7 +10,7 @@ LCORE_NAMESPACE_BEGIN
 template <typename T>
 class Task;
 
-template <typename T, template <typename> typename TaskType>
+template <typename T, template <typename> typename TaskType, typename InitSuspend = std::suspend_never, typename FinalSuspend = std::suspend_always>
 class Promise {
 public:
     using value_type = T;
@@ -25,11 +25,11 @@ public:
     }
 
     auto initial_suspend() noexcept {
-        return std::suspend_never();        // Do not suspend the coroutine at the beginning
+        return InitSuspend();
     }
 
     auto final_suspend() noexcept {
-        return std::suspend_always();       // Suspend the coroutine at the end
+        return FinalSuspend();
     }
 
     void unhandled_exception(){
@@ -46,8 +46,8 @@ public:
     std::optional<T> value;
 };
 
-template <template <typename> typename TaskType>
-class Promise<void, TaskType> {
+template <template <typename> typename TaskType, typename InitSuspend, typename FinalSuspend>
+class Promise<void, TaskType, InitSuspend, FinalSuspend> {
 public:
     using value_type = void;
     using handle_type = std::coroutine_handle<Promise<void, TaskType>>;
@@ -61,11 +61,11 @@ public:
     }
 
     auto initial_suspend() noexcept {
-        return std::suspend_never();        // Do not suspend the coroutine at the beginning
+        return InitSuspend();
     }
 
     auto final_suspend() noexcept {
-        return std::suspend_always();       // Suspend the coroutine at the end
+        return FinalSuspend();
     }
 
     void unhandled_exception(){

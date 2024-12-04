@@ -7,7 +7,7 @@
 
 LCORE_NAMESPACE_BEGIN
 
-template <typename T>
+template <typename T, typename InitSuspend, typename FinalSuspend>
 class Task;
 
 template <typename T, template <typename> typename TaskType, typename InitSuspend = std::suspend_never, typename FinalSuspend = std::suspend_always>
@@ -94,10 +94,10 @@ public:
     virtual T await_resume() = 0;
 };
 
-template <typename T>
+template <typename T, typename InitSuspend = std::suspend_never, typename FinalSuspend = std::suspend_always>
 class Task: AwaitableBase<T>{
 public:
-    using promise_type = Promise<T, Task>;
+    using promise_type = Promise<T, Task, InitSuspend, FinalSuspend>;
     struct sentinel{};
 private:
     std::coroutine_handle<promise_type> handle;
@@ -145,10 +145,10 @@ public:
     }
 };
 
-template <>
-class Task<void>: AwaitableBase<void>{
+template <typename InitSuspend, typename FinalSuspend>
+class Task<void, InitSuspend, FinalSuspend>: AwaitableBase<void>{
 public:
-    using promise_type = Promise<void, Task>;
+    using promise_type = Promise<void, Task, InitSuspend, FinalSuspend>;
     struct sentinel{};
 private:
     std::coroutine_handle<promise_type> handle;

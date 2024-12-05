@@ -88,7 +88,7 @@ public:
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
     inline Ptr<U> Cast() const noexcept {
         return std::static_pointer_cast<U>(*this);
     };
@@ -98,7 +98,7 @@ public:
     /// @return Ptr<U> The casted pointer, if failed, return nullptr
     /// @note Dynamic cast is slower and should be avoided if possible
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
     inline Ptr<U> DynamicCast() const noexcept {
         return std::dynamic_pointer_cast<U>(*this);
     };
@@ -107,7 +107,7 @@ public:
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
     inline Ptr<U> ConstCast() const noexcept {
         return std::const_pointer_cast<U>(*this);
     };
@@ -116,7 +116,7 @@ public:
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
     inline Ptr<U> ReinterpretCast() const noexcept {
         return std::reinterpret_pointer_cast<U>(*this);
     };

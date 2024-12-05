@@ -10,18 +10,18 @@ LCORE_NAMESPACE_BEGIN
 template <typename T, typename InitSuspend, typename FinalSuspend>
 class Task;
 
-template <typename T, template <typename> typename TaskType, typename InitSuspend = std::suspend_never, typename FinalSuspend = std::suspend_always>
+template <typename T, template <typename,typename,typename> typename TaskType, typename InitSuspend = std::suspend_never, typename FinalSuspend = std::suspend_always>
 class Promise {
 public:
     using value_type = T;
-    using handle_type = std::coroutine_handle<Promise<T, TaskType>>;
-    using promise_type = Promise<T, TaskType>;
+    using handle_type = std::coroutine_handle<Promise<T, TaskType, InitSuspend, FinalSuspend>>;
+    using promise_type = Promise<T, TaskType, InitSuspend, FinalSuspend>;
 
     Promise() = default;
     ~Promise() = default;
 
     auto get_return_object(){
-        return TaskType<T>(handle_type::from_promise(*this));
+        return TaskType<T, InitSuspend, FinalSuspend>(handle_type::from_promise(*this));
     }
 
     auto initial_suspend() noexcept {
@@ -46,18 +46,18 @@ public:
     std::optional<T> value;
 };
 
-template <template <typename> typename TaskType, typename InitSuspend, typename FinalSuspend>
+template <template <typename, typename, typename> typename TaskType, typename InitSuspend, typename FinalSuspend>
 class Promise<void, TaskType, InitSuspend, FinalSuspend> {
 public:
     using value_type = void;
-    using handle_type = std::coroutine_handle<Promise<void, TaskType>>;
-    using promise_type = Promise<void, TaskType>;
+    using handle_type = std::coroutine_handle<Promise<void, TaskType, InitSuspend, FinalSuspend>>;
+    using promise_type = Promise<void, TaskType, InitSuspend, FinalSuspend>;
 
     Promise() = default;
     ~Promise() = default;
 
     auto get_return_object(){
-        return TaskType<void>(handle_type::from_promise(*this));
+        return TaskType<void, InitSuspend, FinalSuspend>(handle_type::from_promise(*this));
     }
 
     auto initial_suspend() noexcept {

@@ -3,8 +3,10 @@ cmake_minimum_required(VERSION 3.12)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Enable C++ 20 modules
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmodules-ts")
+# If MSVC, enable /Zc:__cplusplus
+if (MSVC)
+    add_compile_options(/Zc:__cplusplus)
+endif()
 
 option(LCORE_ENABLE_RECORDSTACK "Enable record stack" ON)
 option(LCORE_ENABLE_ASSERT "Enable assert" ON)

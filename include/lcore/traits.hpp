@@ -85,7 +85,7 @@ concept Iterable = requires(T t){
 /// @brief Get the value type of an iterable
 /// @tparam T The iterable type
 template <typename T>
-using IterableValueType = RemoveReference<decltype(*std::declval<T>().begin())>;
+using IterableValueType = RemoveCV<RemoveReference<decltype(*std::declval<T>().begin())>>;
 
 template <typename T>
 concept ConstIterable = requires(const T t){

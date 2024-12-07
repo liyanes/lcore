@@ -14,6 +14,7 @@ class RawPtr {
 protected:
     T* ptr = nullptr;
 public:
+    inline RawPtr() = default;
     inline RawPtr(T* ptr): ptr(ptr) {}
     inline RawPtr(std::nullptr_t): ptr(nullptr) {}
     inline RawPtr(const RawPtr<T>& ptr): ptr(ptr.ptr) {}
@@ -126,6 +127,46 @@ public:
     inline RawPtr<T> Get() const noexcept {
         return std::shared_ptr<T>::get();
     };
+};
+
+template <typename T, typename U>
+inline Ptr<T> StaticCast(const Ptr<U>& ptr) noexcept {
+    return std::static_pointer_cast<T>(ptr);
+};
+
+template <typename T, typename U>
+inline Ptr<T> StaticCast(Ptr<U>&& ptr) noexcept {
+    return std::static_pointer_cast<T>(std::forward<Ptr<U>>(ptr));
+};
+
+template <typename T, typename U>
+inline Ptr<T> DynamicCast(const Ptr<U>& ptr) noexcept {
+    return std::dynamic_pointer_cast<T>(ptr);
+};
+
+template <typename T, typename U>
+inline Ptr<T> DynamicCast(Ptr<U>&& ptr) noexcept {
+    return std::dynamic_pointer_cast<T>(std::forward<Ptr<U>>(ptr));
+};
+
+template <typename T, typename U>
+inline Ptr<T> ConstCast(const Ptr<U>& ptr) noexcept {
+    return std::const_pointer_cast<T>(ptr);
+};
+
+template <typename T, typename U>
+inline Ptr<T> ConstCast(Ptr<U>&& ptr) noexcept {
+    return std::const_pointer_cast<T>(std::forward<Ptr<U>>(ptr));
+};
+
+template <typename T, typename U>
+inline Ptr<T> ReinterpretCast(const Ptr<U>& ptr) noexcept {
+    return std::reinterpret_pointer_cast<T>(ptr);
+};
+
+template <typename T, typename U>
+inline Ptr<T> ReinterpretCast(Ptr<U>&& ptr) noexcept {
+    return std::reinterpret_pointer_cast<T>(std::forward<Ptr<U>>(ptr));
 };
 
 template <typename T, typename... Args>

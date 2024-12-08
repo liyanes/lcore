@@ -5,6 +5,10 @@
 #include <utility>
 #include <optional>
 
+#ifdef LCORE_DEBUG
+#include <iostream>
+#endif
+
 LCORE_NAMESPACE_BEGIN
 
 template <typename T, typename InitSuspend, typename FinalSuspend>
@@ -33,6 +37,7 @@ public:
     }
 
     void unhandled_exception(){
+        throw;
     }
 
     void return_value(T&& value){
@@ -69,6 +74,7 @@ public:
     }
 
     void unhandled_exception(){
+        throw;
     }
 
     void return_void(){

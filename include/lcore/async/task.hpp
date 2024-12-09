@@ -118,6 +118,13 @@ public:
         other.handle = nullptr;
     }
 
+    Task& operator=(const Task&) = delete;
+    Task& operator=(Task&& other){
+        handle = other.handle;
+        other.handle = nullptr;
+        return *this;
+    }
+
     ~Task(){
         if(handle) handle.destroy();
     }
@@ -167,6 +174,13 @@ public:
     Task(const Task&) = delete;
     Task(Task&& other): handle(other.handle){
         other.handle = nullptr;
+    }
+
+    Task& operator=(const Task&) = delete;
+    Task& operator=(Task&& other){
+        handle = other.handle;
+        other.handle = nullptr;
+        return *this;
     }
 
     ~Task(){

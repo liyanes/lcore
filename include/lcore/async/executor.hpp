@@ -9,8 +9,8 @@
  * 
  */
 
-#include "../config.h"
-#include "../container.hpp"
+#include "lcore/config.h"
+#include "lcore/container.hpp"
 #include "task.hpp"
 #include <thread>
 

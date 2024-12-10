@@ -1,5 +1,7 @@
+#pragma once
+#include "lcore/base.hpp"
 #include "generator.hpp"
-#include "../traits.hpp"
+#include "traits.hpp"
 
 LCORE_NAMESPACE_BEGIN
 

@@ -1,5 +1,6 @@
-#include "../config.h"
-#include "../traits.hpp"
+#pragma once
+#include "lcore/base.hpp"
+#include "traits.hpp"
 #include "task.hpp"
 
 LCORE_NAMESPACE_BEGIN

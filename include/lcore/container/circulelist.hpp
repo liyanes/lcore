@@ -1,31 +1,33 @@
-#include "../config.h"
+#pragma once
+#include "lcore/base.hpp"
+#include "lcore/traits.hpp"
 #include <memory>
 #include <cstddef>
-#include "../traits.hpp"
 
 LCORE_NAMESPACE_BEGIN
 
 template <typename T>
-class __CircularListNode {
-public:
-    T value;
-    __CircularListNode* next;
-    __CircularListNode* prev;
-
-    __CircularListNode(): value(), next(nullptr), prev(nullptr){};
-    __CircularListNode(const T& value): value(value), next(nullptr), prev(nullptr){};
-    __CircularListNode(T&& value): value(std::move(value)), next(nullptr), prev(nullptr){};
-};
-
-template <typename T>
 requires DefaultConstructible<T>
 class CircularList {
+private:
+    class __Node {
+    public:
+        T value;
+        __Node* next;
+        __Node* prev;
+
+        __Node(): value(), next(nullptr), prev(nullptr){};
+        __Node(const T& value): value(value), next(nullptr), prev(nullptr){};
+        __Node(T&& value): value(std::move(value)), next(nullptr), prev(nullptr){};
+    };
+    
+
     /// @brief Empty node
     /// In this structure, tail is always the empty node, head is the next node of tail
-    __CircularListNode<T>* emptynode;
+    __Node* emptynode;
     size_t m_size;
 public:
-    CircularList(): emptynode(new __CircularListNode<T>()), m_size(0){
+    CircularList(): emptynode(new __Node()), m_size(0){
         emptynode->next = emptynode;
         emptynode->prev = emptynode;
     };
@@ -40,7 +42,7 @@ public:
     }
 
     void push_back(T&& value){
-        auto node = new __CircularListNode<T>(std::forward<T>(value));
+        auto node = new __Node(std::forward<T>(value));
         node->prev = emptynode->prev;
         node->next = emptynode;
         emptynode->prev->next = node;
@@ -49,7 +51,7 @@ public:
     }
 
     void push_front(T&& value){
-        auto node = new __CircularListNode<T>(std::forward<T>(value));
+        auto node = new __Node(std::forward<T>(value));
         node->next = emptynode->next;
         node->prev = emptynode;
         emptynode->next->prev = node;
@@ -94,9 +96,9 @@ public:
     }
 
     class iterator {
-        __CircularListNode<T>* node;
+        __Node* node;
     public:
-        iterator(__CircularListNode<T>* node): node(node){};
+        iterator(__Node* node): node(node){};
         T& operator*(){
             return node->value;
         }
@@ -140,10 +142,10 @@ public:
     }
 
     class ignore_iterator {
-        __CircularListNode<T>* node;
-        __CircularListNode<T>* empty;
+        __Node* node;
+        __Node* empty;
     public:
-        ignore_iterator(__CircularListNode<T>* node, __CircularListNode<T>* empty): node(node), empty(empty){
+        ignore_iterator(__Node* node, __Node* empty): node(node), empty(empty){
             if (node == empty) node = node->next;
         }
         ignore_iterator& operator++(){

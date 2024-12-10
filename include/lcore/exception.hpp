@@ -5,7 +5,6 @@
 #include <sstream>
 #include <vector>
 #include "base.hpp"
-#include "config.h"
 
 #define LCORE_STACKTRACE_SIZE 64
 

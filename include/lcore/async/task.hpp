@@ -1,13 +1,9 @@
 #pragma once
-#include "../config.h"
-#include "../class.hpp"
+#include "lcore/base.hpp"
+#include "lcore/class.hpp"
 #include <coroutine>
 #include <utility>
 #include <optional>
-
-#ifdef LCORE_DEBUG
-#include <iostream>
-#endif
 
 LCORE_NAMESPACE_BEGIN
 

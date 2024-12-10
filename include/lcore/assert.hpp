@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include "lcore/base.hpp"
 
 #ifdef LCORE_ENABLE_ASSERT
 

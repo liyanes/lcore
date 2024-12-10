@@ -1,4 +1,7 @@
-#include "../container.hpp"
+#pragma once
+#include "lcore/base.hpp"
+#include "lcore/traits.hpp"
+#include <tuple>
 
 LCORE_NAMESPACE_BEGIN
 
@@ -110,103 +113,5 @@ public:
         return view_type(std::apply([start, end](auto... args){return std::make_tuple(args->slice(start, end)...);}, containers));
     }
 };
-
-// /// @brief Product of multiple containers
-// /// @details This class is used to iterate over the product of multiple containers
-// /// @tparam ...Containers 
-// template <typename ...Containers>
-// class product {
-// public:
-//     struct sentinal {};
-//     using value_type = std::tuple<typename Containers::value_type...>;
-// private:
-//     using _subiters_begintype = std::tuple<decltype(std::declval<Containers>().cbegin())...>;
-//     using _subiters_endtype = std::tuple<decltype(std::declval<Containers>().cend())...>;
-    
-//     using _first_begin = NthTypeOfTuple<0, _subiters_begintype>;
-//     using _first_end = NthTypeOfTuple<0, _subiters_endtype>;
-    
-//     using _left_containers_tps = RemoveNthOfTuple<0, std::tuple<const Containers*...>>;
-
-//     template <typename Tps, size_t ...Indexes>
-//     inline auto static _product_factory(Tps tps, std::index_sequence<Indexes...>){
-//         return product(std::get<Indexes>(tps)...);
-//     }
-
-//     using _left_product = decltype(_product_factory(std::declval<_left_containers_tps>(), std::make_index_sequence<sizeof...(Containers) - 1>{}));
-
-// public:
-//     class iterator {
-//         _first_begin first_begin;
-//         _first_end first_end;
-
-//         _left_product left_product;
-//         typename _left_product::iterator left_iter;
-//     public:
-//         inline iterator(_first_begin first_begin, _first_end first_end, _left_product left_product): first_begin(first_begin), first_end(first_end), left_product(left_product), left_iter(left_product.begin()) {}
-
-//         inline iterator operator++(){
-//             auto frommer = *this;
-//             if (++left_iter == left_product.end()){
-//                 left_iter = left_product.begin();
-//                 ++first_begin;
-//             }
-//             return frommer;
-//         }
-
-//         inline iterator& operator++(int){
-//             if (++left_iter == left_product.end()){
-//                 left_iter = left_product.begin();
-//                 ++first_begin;
-//             }
-//             return *this;
-//         }
-
-//         inline bool operator==(sentinal){
-//             return first_begin == first_end;
-//         }
-
-//         inline value_type operator*(){
-//             return std::tuple_cat(std::make_tuple(*first_begin), *left_iter);
-//         }
-//     };
-
-//     using const_iterator = iterator;
-//     using view_type = product<const Containers*...>;
-
-// private:
-//     std::tuple<const Containers*...> containers;
-// public:
-//     inline product(const Containers&... containers): containers(&containers...) {}
-
-//     inline iterator begin() {
-//         return iterator(std::apply([](auto... args){return std::make_tuple(args->cbegin()...);}, containers), std::apply([](auto... args){return std::make_tuple(args->cend()...);}, containers), std::apply([](auto... args){return product(args...);}, containers));
-//     }
-
-//     inline sentinal end() {
-//         return {};
-//     }
-
-//     inline const_iterator begin() const {
-//         return iterator(std::apply([](auto... args){return std::make_tuple(args->cbegin()...);}, containers), std::apply([](auto... args){return std::make_tuple(args->cend()...);}, containers), std::apply([](auto... args){return product(args...);}, containers));
-//     }
-
-//     inline sentinal end() const {
-//         return {};
-//     }
-
-//     inline const_iterator cbegin() const {
-//         return iterator(std::apply([](auto... args){return std::make_tuple(args->cbegin()...);}, containers), std::apply([](auto... args){return std::make_tuple(args->cend()...);}, containers), std::apply([](auto... args){return product(args...);}, containers));
-//     }
-
-//     inline sentinal cend() const {
-//         return {};
-//     }
-
-//     inline view_type slice(size_t start, size_t end) const {
-//         return view_type(std::apply([start, end](auto... args){return std::make_tuple(args->slice(start, end)...);}, containers));
-//     }
-// };
-
 
 LCORE_NAMESPACE_END

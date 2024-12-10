@@ -3,6 +3,7 @@
 #error "fmt library is required for this header"
 #else
 
+#include "base.hpp"
 #include "type.hpp"
 #include "traits.hpp"
 #include <vector>

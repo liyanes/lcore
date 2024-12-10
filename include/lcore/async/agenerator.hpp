@@ -1,9 +1,8 @@
-#include "../config.h"
+#include "lcore/base.hpp"
+#include "task.hpp"
+#include "traits.hpp"
 #include <coroutine>
 #include <optional>
-#include "task.hpp"
-#define LCORE_TRAITS_USE_COROUTINE
-#include "../traits.hpp"
 
 LCORE_NAMESPACE_BEGIN
 

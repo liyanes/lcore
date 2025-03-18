@@ -54,6 +54,9 @@ using RemoveVolatile = std::remove_volatile_t<T>;
 template <typename T>
 using RemoveCV = std::remove_cv_t<T>;
 
+template <typename T>
+concept IsReference = std::is_reference_v<T>;
+
 template <typename Func, typename ...Args>
 concept IsCallable = requires(Func func, Args... args){
     { func(args...) };

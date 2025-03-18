@@ -5,6 +5,7 @@
 #include "../class.hpp"
 #include "../exception.hpp"
 #include <map>
+#include <functional>
 
 LCORE_NAMESPACE_BEGIN
 

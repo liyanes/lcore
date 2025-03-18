@@ -89,8 +89,8 @@ using IterableValueType = RemoveReference<decltype(*std::declval<T>().begin())>;
 
 template <typename T>
 concept ConstIterable = requires(const T t){
-    Iterable<T>;
-    IsConst<IterableValueType<T>>;
+    requires Iterable<T>;
+    requires IsConst<IterableValueType<T>>;
 };
 
 
@@ -98,7 +98,7 @@ concept ConstIterable = requires(const T t){
 /// @tparam T The type to be checked
 template <typename T>
 concept IsMap = requires(T t){
-    Iterable<T>;
+    requires Iterable<T>;
     {IterableValueType<T>::first} -> std::same_as<typename T::key_type>;
     {IterableValueType<T>::second} -> std::same_as<typename T::mapped_type>;
 };
@@ -118,8 +118,8 @@ using ReturnType = decltype(std::declval<Func>()(std::declval<Args>()...));
 
 template <typename T>
 concept StringLike = requires(T t){
-    Iterable<T>;
-    IsSame<IterableValueType<T>, char>;
+    requires Iterable<T>;
+    requires IsSame<IterableValueType<T>, char>;
     {t.c_str()} -> IsOneOf<const char*, const char[]>;
     {t.size()} -> IsSame<size_t>;
 };

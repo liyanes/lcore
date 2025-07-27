@@ -1,7 +1,7 @@
 #include <lcore/async/executor.hpp>
 #include <iostream>
 
-using namespace LCORE_NAMESPACE_NAME;
+using namespace LCORE_NAMESPACE_NAME::async;
 
 Task<void> task1(){
     co_await std::suspend_always();

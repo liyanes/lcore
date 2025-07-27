@@ -1,10 +1,10 @@
-#include "lcore/base.hpp"
+#include "base.hpp"
 #include "task.hpp"
 #include "traits.hpp"
 #include <coroutine>
 #include <optional>
 
-LCORE_NAMESPACE_BEGIN
+LCORE_ASYNC_NAMESPACE_BEGIN
 
 // Due to the lack of support for async generator in C++20/23, we need to implement it ourselves
 // the returns of begin() and end() will be awaitable objects, and the generator will be a coroutine
@@ -151,4 +151,4 @@ public:
     }
 };
 
-LCORE_NAMESPACE_END
+LCORE_ASYNC_NAMESPACE_END

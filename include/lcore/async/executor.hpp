@@ -9,12 +9,12 @@
  * 
  */
 
-#include "lcore/config.h"
+#include "base.hpp"
 #include "lcore/container.hpp"
 #include "task.hpp"
 #include <thread>
 
-LCORE_NAMESPACE_BEGIN
+LCORE_ASYNC_NAMESPACE_BEGIN
 
 class Executor: public AbstractClass {
     virtual void Schedule(Task<void>&& task) = 0;
@@ -50,5 +50,4 @@ public:
     }
 };
 
-LCORE_NAMESPACE_END
-
+LCORE_ASYNC_NAMESPACE_END

@@ -5,7 +5,7 @@
 #include <ranges>
 #include <memory>
 
-using namespace LCORE_NAMESPACE_NAME;
+using namespace LCORE_NAMESPACE_NAME::async;
 
 Generator<int> yiledtest(){
     co_yield 1;

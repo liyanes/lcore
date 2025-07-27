@@ -1,9 +1,9 @@
 #pragma once
-#include "lcore/base.hpp"
+#include "base.hpp"
 #include "generator.hpp"
 #include "traits.hpp"
 
-LCORE_NAMESPACE_BEGIN
+LCORE_ASYNC_NAMESPACE_BEGIN
 
 template <Iterable First, Iterable ...Rest>
 Generator<std::tuple<RemoveReference<decltype(*std::declval<First>().begin())> , RemoveReference<decltype(*std::declval<Rest>().begin())>...>> _product(const First& first, const Rest&... rest){
@@ -26,4 +26,4 @@ auto product(Containers&&... containers){
     return _product(std::forward<Containers>(containers)...);
 }
 
-LCORE_NAMESPACE_END
+LCORE_ASYNC_NAMESPACE_END

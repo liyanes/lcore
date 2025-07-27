@@ -5,7 +5,7 @@
 #include <iostream>
 #include <tuple>
 
-using namespace LCORE_NAMESPACE_NAME;
+using namespace LCORE_NAMESPACE_NAME::async;
 
 int main(){
     std::vector<int> vec = {1, 2, 3, 4, 5};

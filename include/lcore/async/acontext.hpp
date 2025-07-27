@@ -1,9 +1,9 @@
 #pragma once
-#include "lcore/base.hpp"
+#include "base.hpp"
 #include "traits.hpp"
 #include "task.hpp"
 
-LCORE_NAMESPACE_BEGIN
+LCORE_ASYNC_NAMESPACE_BEGIN
 
 template <typename InitRet, typename ...InitArgs>
 class AsyncContext: AbstractClass {
@@ -22,4 +22,4 @@ public:
     }
 };
 
-LCORE_NAMESPACE_END
+LCORE_ASYNC_NAMESPACE_END

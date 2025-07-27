@@ -25,10 +25,8 @@ public:
 
     inline RawPtr<T>& operator=(const RawPtr<T>& ptr) noexcept {this->ptr = ptr.ptr; return *this;}
     inline RawPtr<T>& operator=(RawPtr<T>&& ptr) noexcept {this->ptr = ptr.ptr; ptr.ptr = nullptr; return *this;}
-    inline T* operator->() noexcept {return ptr;}
-    inline const T* operator->() const noexcept {return ptr;}
-    inline T& operator*() noexcept {return *ptr;}
-    inline const T& operator*() const noexcept {return *ptr;}
+    inline T* operator->() const noexcept {return ptr;}
+    inline T& operator*() const noexcept {return *ptr;}
     inline operator bool() const noexcept {return ptr != nullptr;}
     inline bool operator==(const RawPtr<T>& ptr) const noexcept {return this->ptr == ptr.ptr;}
     inline bool operator==(std::nullptr_t) const noexcept {return ptr == nullptr;}

@@ -5,10 +5,10 @@
 
 LCORE_NAMESPACE_BEGIN
 
-/// @brief Type-safe union
-/// @tparam ...Args The types of the union
+/// @brief Type-safe variant
+/// @tparam ...Args The types of the variant
 template <typename ...Args>
-class Union: public std::variant<Args...> {
+class Variant: public std::variant<Args...> {
 public:
     using std::variant<Args...>::variant;
 

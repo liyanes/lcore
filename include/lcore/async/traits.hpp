@@ -20,4 +20,15 @@ concept __IsAwaitable = requires(T t){
 template <typename T>
 concept IsAwaitable = HasCoAwaitOperator<T> || __IsAwaitable<T>;
 
+// Promise like
+
+template <typename T>
+concept PromiseLike = requires(T t){
+    {t.get_return_object()} -> std::same_as<T>;
+    {t.initial_suspend()} -> std::same_as<std::suspend_always>;
+    {t.final_suspend()} -> std::same_as<std::suspend_always>;
+    {t.unhandled_exception()};
+    {t.return_value(std::declval<typename T::value_type>())};
+};
+
 LCORE_NAMESPACE_END

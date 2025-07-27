@@ -1,4 +1,4 @@
-#include "../config.h"
+#include "base.hpp"
 
 #if __cplusplus >= 202300L
 #include <generator>
@@ -812,9 +812,9 @@ constexpr inline bool enable_view<generator<_T, _U, _Alloc>> = true;
 
 #endif
 
-LCORE_NAMESPACE_BEGIN
+LCORE_ASYNC_NAMESPACE_BEGIN
 
 template <typename T>
 using Generator = std::generator<T>;
 
-LCORE_NAMESPACE_END
+LCORE_ASYNC_NAMESPACE_END

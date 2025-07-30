@@ -1,7 +1,7 @@
 #pragma once
 #include "base.hpp"
 #include "lcore/class.hpp"
-#include "lcore/traits.hpp"
+#include "traits.hpp"
 #include <coroutine>
 #include <utility>
 #include <optional>
@@ -18,23 +18,27 @@ public:
     auto final_suspend() noexcept { return FinalSuspend(); }
 };
 
-template <typename T, typename SuspendHandlerType = SuspendHandler<>>
+template <typename T, typename SuspendHandleType = SuspendHandler<>>
+class Promise;
+
+template <typename T, typename SuspendHandlerType = SuspendHandler<>, typename PromiseType = Promise<T, SuspendHandlerType>>
 class Task;
 
 template <typename T>
-using DefaultTaskWrapper = Task<T, std::suspend_never, std::suspend_always>;
+using DefaultTaskWrapper = Task<T, SuspendHandler<>>;
 
-template <typename T, template <typename> typename TaskType = DefaultTaskWrapper, typename SuspendHandleType = SuspendHandler<>>
+template <typename T, typename SuspendHandleType>
 class Promise: public SuspendHandleType {
 public:
     using value_type = T;
-    using promise_type = Promise<T, TaskType, SuspendHandleType>;
+    using promise_type = Promise<T, SuspendHandleType>;
     using handle_type = std::coroutine_handle<promise_type>;
 
     Promise() = default;
     ~Promise() = default;
 
-    auto get_return_object(){
+    template <template <typename> typename TaskType = DefaultTaskWrapper>
+    TaskType<T> get_return_object(){
         return TaskType<T>(handle_type::from_promise(*this));
     }
 
@@ -53,17 +57,18 @@ public:
     std::optional<T> value;
 };
 
-template <template <typename> typename TaskType, typename SuspendHandleType>
-class Promise<void, TaskType>: public SuspendHandleType {
+template <typename SuspendHandleType>
+class Promise<void, SuspendHandleType>: public SuspendHandleType {
 public:
     using value_type = void;
-    using promise_type = Promise<void, TaskType, SuspendHandleType>;
+    using promise_type = Promise<void, SuspendHandleType>;
     using handle_type = std::coroutine_handle<promise_type>;
 
     Promise() = default;
     ~Promise() = default;
 
-    auto get_return_object(){
+    template <template <typename> typename TaskType = DefaultTaskWrapper>
+    TaskType<void> get_return_object(){
         return TaskType<void>(handle_type::from_promise(*this));
     }
 
@@ -84,21 +89,13 @@ class AwaitableBase: public Interface {
     T await_resume() {return T{};};
 };
 
-/// @brief Awaitable abstract class, used in co_await and executor
-/// @tparam T 
-template <typename T>
-class Awaitable: public AbstractClass {
-public:
-    virtual bool await_ready() = 0;
-    virtual bool await_suspend(std::coroutine_handle<> handle) = 0;
-    virtual T await_resume() = 0;
-};
-
-template <typename T, typename SuspendHandlerType = SuspendHandler<>>
+template <typename T, typename SuspendHandlerType, typename PromiseType>
 class Task: AwaitableBase<T>{
 public:
-    using promise_type = Promise<T, Task, SuspendHandlerType>;
+    using promise_type = PromiseType;
     struct sentinel{};
+
+    // static_assert(IsPromise<PromiseType>, "PromiseType must be a valid promise type");
 private:
     std::coroutine_handle<promise_type> handle;
 public:
@@ -152,11 +149,13 @@ public:
     }
 };
 
-template <typename SuspendHandlerType>
-class Task<void, SuspendHandlerType>: AwaitableBase<void>{
+template <typename SuspendHandlerType, typename PromiseType>
+class Task<void, SuspendHandlerType, PromiseType>: AwaitableBase<void>{
 public:
-    using promise_type = Promise<void, Task, SuspendHandlerType>;
+    using promise_type = PromiseType;
     struct sentinel{};
+
+    // static_assert(IsPromise<PromiseType>, "PromiseType must be a valid promise type");
 private:
     std::coroutine_handle<promise_type> handle;
 public:

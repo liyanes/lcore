@@ -5,30 +5,69 @@
 
 LCORE_NAMESPACE_BEGIN
 
+// Awaitable
+
 template <typename T>
 concept HasCoAwaitOperator = requires(T t){
     {t.operator co_await()} -> IsSame<std::suspend_always>;
 };
 
 template <typename T>
-concept __IsAwaitable = requires(T t){
-    {t.await_ready()} -> std::same_as<bool>;
-    {t.await_suspend()} -> std::same_as<std::coroutine_handle<>>;
-    {t.await_resume()} -> std::same_as<typename T::value_type>;
+concept IsCoroutineHandle = requires(T t){
+    {t.resume()};
+    {t.done()} -> IsSame<bool>;
+    {t.destroy()};
 };
 
 template <typename T>
-concept IsAwaitable = HasCoAwaitOperator<T> || __IsAwaitable<T>;
+concept IsAwaitableImplement = requires(T t){
+    typename T::value_type;
+    {t.await_ready()} -> IsSame<bool>;
+    {t.await_suspend()} -> IsCoroutineHandle;
+    {t.await_resume()} -> IsSame<typename T::value_type>;
+};
+
+template <typename T>
+concept IsAwaitable = HasCoAwaitOperator<T> || IsAwaitableImplement<T>;
 
 // Promise like
 
 template <typename T>
-concept PromiseLike = requires(T t){
-    {t.get_return_object()} -> std::same_as<T>;
-    {t.initial_suspend()} -> std::same_as<std::suspend_always>;
-    {t.final_suspend()} -> std::same_as<std::suspend_always>;
-    {t.unhandled_exception()};
+concept IsSuspendHandler = requires(T t){
+    {t.initial_suspend()} -> IsAwaitableImplement;
+    {t.final_suspend()} -> IsAwaitableImplement;
+};
+
+template <typename T>
+concept PromiseReturnValue = requires(T t){
     {t.return_value(std::declval<typename T::value_type>())};
+};
+
+template <typename T>
+concept PromiseReturnVoid = requires(T t){
+    {t.return_void()};
+};
+
+template <typename T>
+concept PromiseYieldValue = requires(T t){
+    {t.yield_value(std::declval<typename T::value_type>())};
+};
+
+template <typename T>
+concept IsPromise = requires(T t){
+    requires IsSuspendHandler<T>;
+    requires PromiseReturnValue<T> || PromiseReturnVoid<T> || PromiseYieldValue<T>;
+    {t.get_return_object()};
+    {t.unhandled_exception()};
+};
+
+// Task like
+
+template <typename T>
+concept IsTask = requires(T t){
+    typename T::promise_type;
+    requires IsPromise<typename T::promise_type>;
+    requires ConstructibleWith<T, typename T::promise_type>;
 };
 
 LCORE_NAMESPACE_END

@@ -67,6 +67,12 @@ public:
     }
 };
 
+// operator delete for RawPtr
+// template <typename T>
+// inline void operator delete(RawPtr<T>& ptr) noexcept {
+//     ptr.Delete();
+// }
+
 /// @brief Smart pointer
 /// @tparam T The type of the pointer
 template <typename T>

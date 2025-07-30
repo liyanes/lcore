@@ -98,8 +98,7 @@ public:
 
     class iterator {
         handle_type handle;
-        bool first = true;
-        int next = 0;
+        int next = 1;
     public:
         iterator() = default;
         explicit iterator(handle_type handle) : handle(handle) {}
@@ -121,11 +120,7 @@ public:
             return !handle.done();
         }
 
-        Task<T> operator*() {
-            if (first) {
-                operator++();
-                first = false;
-            }
+        Task<std::optional<T>> operator*() {
             auto &promise = handle.promise();
             while (next--) {
                 promise.value = std::nullopt;
@@ -134,7 +129,10 @@ public:
                     co_await std::suspend_always();
                 }
                 if (handle.done()) {
-                    co_return promise.value.value();
+                    if (promise.value.has_value()) {
+                        co_return promise.value;
+                    }
+                    co_return std::nullopt; // No more values to yield
                 }
             }
             next = 0;

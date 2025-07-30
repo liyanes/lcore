@@ -63,6 +63,9 @@ concept IsCallable = requires(Func func, Args... args){
 };
 
 template <typename Func, typename ...Args>
+concept InvokeAble = IsCallable<Func, Args...>;
+
+template <typename Func, typename ...Args>
 using ResultCallable = decltype(std::declval<Func>()(std::declval<Args>()...));
 
 template <typename Func, typename ArgsTuple>
@@ -205,6 +208,11 @@ using EnableIf = std::enable_if_t<Cond, T>;
 
 template <bool Cond, typename T, typename F>
 using Conditional = std::conditional_t<Cond, T, F>;
+
+template <typename T, typename Args>
+concept ConstructibleWith = requires(T t, Args args){
+    {T(args)} -> IsSame<T>;
+};
 
 template <typename T>
 concept DefaultConstructible = std::is_default_constructible_v<T>;

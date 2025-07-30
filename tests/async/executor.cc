@@ -1,5 +1,7 @@
+#include <gtest/gtest.h>
 #include <lcore/async/executor.hpp>
 #include <iostream>
+#include <sstream>
 
 using namespace LCORE_NAMESPACE_NAME::async;
 
@@ -21,10 +23,23 @@ Task<void> task2(){
     std::cout << "Task 2 thrice" << std::endl;
 }
 
-int main(){
-    DefaultExecutor executor;
+TEST(ExecutorTest, BasicFunctionality) {
+    std::stringstream output;
+    std::streambuf* originalBuffer = std::cout.rdbuf(output.rdbuf());
+    
+    DefaultExecutor<> executor;
     executor.Schedule(task1());
     executor.Schedule(task2());
     executor.Run();
-    return 0;
+
+    std::cout.rdbuf(originalBuffer); // Restore original buffer
+
+    std::string expectedOutput = "Task 1 once\nTask 2 once\nTask 1 twice\nTask 2 twice\nTask 1 thrice\nTask 2 thrice\n";
+    EXPECT_EQ(output.str(), expectedOutput);
 }
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+

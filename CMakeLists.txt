@@ -48,6 +48,7 @@ set_target_properties(lcore PROPERTIES DEBUG_POSTFIX "d")
 option(LCORE_ENABLE_TEST "Enable test for lcore" OFF)
 
 if (LCORE_ENABLE_TEST)
+    find_package(GTest REQUIRED)
     enable_testing()
-    add_subdirectory(test)
+    add_subdirectory(tests)
 endif()

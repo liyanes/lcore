@@ -1,4 +1,5 @@
-#include "../config.h"
+#pragma once
+#include "base.hpp"
 #include "../container.hpp"
 #include "../pointer.hpp"
 #include "../string.hpp"
@@ -7,7 +8,7 @@
 #include <map>
 #include <functional>
 
-LCORE_NAMESPACE_BEGIN
+LCORE_OBJ_NAMESPACE_BEGIN
 
 class TypeInfo;
 class Object;
@@ -34,5 +35,5 @@ inline Ptr<Object> TypeId::Constructe() const{
     return (*this)->constructor();
 }
 
-LCORE_NAMESPACE_END
+LCORE_OBJ_NAMESPACE_END
 

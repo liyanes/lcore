@@ -8,8 +8,8 @@
  * @copyright Copyright (c) 2024
  * 
  */
-
-#include "../config.h"
+#pragma once
+#include "base.hpp"
 #include "../pointer.hpp"
 #include "../container.hpp"
 #include "../exception.hpp"
@@ -18,7 +18,7 @@
 #include <map>
 #include <typeinfo>
 
-LCORE_NAMESPACE_BEGIN
+LCORE_OBJ_NAMESPACE_BEGIN
 
 class Object;
 
@@ -213,4 +213,4 @@ Ptr<T> NewObject(Args ...args){
     return Object::New<T>(std::forward(args)...);
 }
 
-LCORE_NAMESPACE_END
+LCORE_OBJ_NAMESPACE_END

@@ -11,6 +11,17 @@ public:
     using std::list<T, Allocator>::list;
     using iterator = typename std::list<T, Allocator>::iterator;
     using const_iterator = typename std::list<T, Allocator>::const_iterator;
+    using reserve_iterator = typename std::list<T, Allocator>::reverse_iterator;
+    using const_reserve_iterator = typename std::list<T, Allocator>::const_reverse_iterator;
+
+    using value_type = T;
+    using reference = typename std::list<T, Allocator>::reference;
+    using const_reference = typename std::list<T, Allocator>::const_reference;
+
+    using size_type = typename std::list<T, Allocator>::size_type;
+    using difference_type = typename std::list<T, Allocator>::difference_type;
+
+    using allocator_type = Allocator;
 
     inline bool contains(const T& value) const {
         return std::find(std::begin(*this), std::end(*this), value) != std::end(*this);

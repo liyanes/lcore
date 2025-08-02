@@ -76,7 +76,7 @@ public:
 /// @brief Smart pointer
 /// @tparam T The type of the pointer
 template <typename T>
-class Ptr: public std::shared_ptr<T> {
+class Ptr: private std::shared_ptr<T> {
 public:
     using std::shared_ptr<T>::shared_ptr;
     inline Ptr(std::shared_ptr<T>&& ptr): std::shared_ptr<T>(std::move(ptr)) {}
@@ -197,7 +197,7 @@ inline constexpr UniquePtr<T> MakeUniquePtr(Args&&... args) {
 /// @brief Weak pointer
 /// @tparam T The type of the pointer
 template <typename T>
-class WeakPtr: public std::weak_ptr<T> {
+class WeakPtr: private std::weak_ptr<T> {
 public:
     using std::weak_ptr<T>::weak_ptr;
     inline WeakPtr(std::weak_ptr<T>&& ptr): std::weak_ptr<T>(std::move(ptr)) {}
@@ -210,7 +210,7 @@ public:
     requires IsDerivedFrom<U, T>
     inline constexpr WeakPtr(WeakPtr<U>&& ptr): std::weak_ptr<T>(std::move(ptr)) {};
 
-    inline Ptr<T> lock() const noexcept {
+    inline Ptr<T> Lock() const noexcept {
         return std::weak_ptr<T>::lock();
     };
 

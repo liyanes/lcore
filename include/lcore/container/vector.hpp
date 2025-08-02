@@ -10,6 +10,19 @@ template <typename T, typename Allocator = std::allocator<T>>
 class Vector: public std::vector<T, Allocator> {
 public:
     using std::vector<T, Allocator>::vector;
+    using iterator = typename std::vector<T, Allocator>::iterator;
+    using const_iterator = typename std::vector<T, Allocator>::const_iterator;
+    using reserve_iterator = typename std::vector<T, Allocator>::reverse_iterator;
+    using const_reserve_iterator = typename std::vector<T, Allocator>::const_reverse_iterator;
+
+    using value_type = T;
+    using reference = typename std::vector<T, Allocator>::reference;
+    using const_reference = typename std::vector<T, Allocator>::const_reference;
+
+    using size_type = typename std::vector<T, Allocator>::size_type;
+    using difference_type = typename std::vector<T, Allocator>::difference_type;
+
+    using allocator_type = Allocator;
 
     template <Iterable tContainer>
     requires IsSame<T, IterableValueType<tContainer>>

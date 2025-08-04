@@ -89,16 +89,18 @@ public:
 
     template <typename KeyType>
     requires std::is_trivially_copyable_v<KeyType>
-    void AddKey(NameType name, size_t offset, size_t size) {
-        m_keys.push_back({name, offset, size, &typeid(KeyType), nullptr});
+    StructMeta& AddKey(NameType name, size_t offset) {
+        m_keys.push_back({name, offset, sizeof(KeyType), &typeid(KeyType), nullptr});
+        return this;
     }
 
     template <typename StructType>
     requires std::is_class_v<StructType> && std::is_trivially_copyable_v<StructType>
-    void AddStructKey(NameType name, size_t offset, size_t size) {
+    StructMeta& AddStructKey(NameType name, size_t offset) {
         auto structMeta = StructMetaBase::FindByType(typeid(StructType));
         if (!structMeta) throw;
-        m_keys.push_back({name, offset, size, &typeid(StructType), structMeta});
+        m_keys.push_back({name, offset, sizeof(StructType), &typeid(StructType), structMeta});
+        return this;
     }
 };
 

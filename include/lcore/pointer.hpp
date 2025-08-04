@@ -41,7 +41,7 @@ public:
     inline T* Get() const noexcept {return ptr;}
 
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires IsDerivedFrom<U, T> || IsDerivedFrom<T, U>
     inline constexpr RawPtr<U> Cast() const noexcept {
         return static_cast<U*>(ptr);
     }
@@ -52,11 +52,13 @@ public:
     }
 
     template <typename U>
+    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
     inline constexpr RawPtr<U> ConstCast() const noexcept {
         return const_cast<U*>(ptr);
     }
 
     template <typename U>
+    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
     inline RawPtr<U> ReinterpretCast() const noexcept {
         return reinterpret_cast<U*>(ptr);
     }
@@ -89,6 +91,17 @@ public:
     requires IsDerivedFrom<U, T>
     inline constexpr Ptr(Ptr<U>&& ptr): std::shared_ptr<T>(std::move(ptr)) {};
 
+    using std::shared_ptr<T>::operator=;
+    using std::shared_ptr<T>::operator bool;
+    using std::shared_ptr<T>::operator->;
+    using std::shared_ptr<T>::operator*;
+    using std::shared_ptr<T>::operator==;
+    using std::shared_ptr<T>::operator!=;
+    using std::shared_ptr<T>::operator<;
+    using std::shared_ptr<T>::operator>;
+    using std::shared_ptr<T>::operator<=;
+    using std::shared_ptr<T>::operator>=;
+
     /// @brief Static cast the pointer
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
@@ -103,7 +116,7 @@ public:
     /// @return Ptr<U> The casted pointer, if failed, return nullptr
     /// @note Dynamic cast is slower and should be avoided if possible
     template <typename U>
-    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
+    // requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
     inline Ptr<U> DynamicCast() const noexcept {
         return std::dynamic_pointer_cast<U>(*this);
     };
@@ -126,11 +139,18 @@ public:
         return std::reinterpret_pointer_cast<U>(*this);
     };
 
+    inline constexpr bool IsConst() const noexcept {return std::is_const_v<T>;};
+
     /// @brief Get the raw pointer
     /// @return RawPtr<T> The raw pointer
     inline RawPtr<T> Get() const noexcept {
         return std::shared_ptr<T>::get();
     };
+
+    /// @brief Reset the pointer
+    inline void Reset() noexcept {
+        std::shared_ptr<T>::reset();
+    }
 };
 
 template <typename T, typename U>
@@ -210,9 +230,16 @@ public:
     requires IsDerivedFrom<U, T>
     inline constexpr WeakPtr(WeakPtr<U>&& ptr): std::weak_ptr<T>(std::move(ptr)) {};
 
-    inline Ptr<T> Lock() const noexcept {
-        return std::weak_ptr<T>::lock();
-    };
+    using std::weak_ptr<T>::operator=;
+    using std::weak_ptr<T>::operator bool;
+    using std::weak_ptr<T>::operator->;
+    using std::weak_ptr<T>::operator*;
+    using std::weak_ptr<T>::operator==;
+    using std::weak_ptr<T>::operator!=;
+    using std::weak_ptr<T>::operator<;
+    using std::weak_ptr<T>::operator>;
+    using std::weak_ptr<T>::operator<=;
+    using std::weak_ptr<T>::operator>=;
 
     /// @brief Static cast the pointer
     /// @tparam U The type to cast to
@@ -228,7 +255,7 @@ public:
     /// @return Ptr<U> The casted pointer, if failed, return nullptr
     /// @note Dynamic cast is slower and should be avoided if possible
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    // requires IsDerivedFrom<U, T>
     inline constexpr Ptr<U> DynamicCast() const noexcept {
         return std::dynamic_pointer_cast<U>(std::weak_ptr<T>::lock());
     };
@@ -250,6 +277,30 @@ public:
     inline constexpr Ptr<U> ReinterpretCast() const noexcept {
         return std::reinterpret_pointer_cast<U>(std::weak_ptr<T>::lock());
     };
+
+    inline constexpr bool IsConst() const noexcept {return std::is_const_v<T>;}
+
+    /// @brief Check if the weak pointer is expired
+    /// @return true if the weak pointer is expired, false otherwise
+    inline bool Expired() const noexcept {
+        return std::weak_ptr<T>::expired();
+    };
+
+    /// @brief Get Ptr<T> from the weak pointer
+    inline Ptr<T> Lock() const noexcept {
+        return std::weak_ptr<T>::lock();
+    };
+
+    /// @brief Get the raw pointer
+    /// @return RawPtr<T> The raw pointer
+    inline RawPtr<T> Get() const noexcept {
+        return std::weak_ptr<T>::lock().Get();
+    };
+
+    /// @brief Reset the weak pointer
+    inline void Reset() noexcept {
+        std::weak_ptr<T>::reset();
+    }
 };
 
 LCORE_NAMESPACE_END

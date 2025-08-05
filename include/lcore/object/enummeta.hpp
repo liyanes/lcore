@@ -1,6 +1,6 @@
 #pragma once
 #include "base.hpp"
-#include "lcore/container/list.hpp"
+#include "lcore/container/vector.hpp"
 
 LCORE_OBJ_NAMESPACE_BEGIN
 
@@ -9,8 +9,12 @@ class EnumMeta;
 
 template <typename BaseType, typename InfoDetail = std::default_sentinel_t>
 class EnumMetaBase {
-    static List<EnumMetaBase*> m_allEnumMetas;
     const std::type_info* m_typeInfo;
+
+    static List<EnumMetaBase*>& GetAllEnumMetas() {
+        static List<EnumMetaBase*> m_allEnumMetas;
+        return m_allEnumMetas;
+    }
 public:
     /// @brief EnumInfo is a structure that holds information about an enum value
     struct EnumInfo {
@@ -27,15 +31,15 @@ public:
         return MetaType<T>();
     }
 protected:
-    List<EnumInfo> m_values;
-    EnumMeta(const std::type_info* typeInfo) : m_typeInfo(typeInfo) { Register(this); }
-    static void Register(EnumMetaBase* meta) { m_allEnumMetas.push_back(meta); }
+    Vector<EnumInfo> m_values;
+    static void Register(EnumMetaBase* meta) { GetAllEnumMetas().push_back(meta); }
+    EnumMetaBase(const std::type_info* typeInfo) : m_typeInfo(typeInfo) { Register(this); }
 public:
     EnumMetaBase(const EnumMetaBase&) = delete;
     EnumMetaBase& operator=(const EnumMetaBase&) = delete;
 
     static EnumMetaBase* FindByType(const std::type_info& typeInfo) {
-        for (auto& meta : m_allEnumMetas) {
+        for (auto& meta : GetAllEnumMetas()) {
             if (*meta->m_typeInfo == typeInfo) {
                 return meta;
             }
@@ -48,24 +52,24 @@ public:
     inline bool operator==(const EnumMetaBase& other) const { return m_typeInfo == other.m_typeInfo; }
     inline bool operator!=(const EnumMetaBase& other) const { return m_typeInfo != other.m_typeInfo; }
 
-    List<EnumInfo>::const_iterator begin() const { return m_values.begin(); }
-    List<EnumInfo>::const_iterator end() const { return m_values.end(); }
-    List<const char*> GetValues() const {
-        List<const char*> values;
+    Vector<EnumInfo>::const_iterator begin() const { return m_values.begin(); }
+    Vector<EnumInfo>::const_iterator end() const { return m_values.end(); }
+    Vector<const char*> GetValues() const {
+        Vector<const char*> values;
         values.reserve(m_values.size());
         for (const auto& value : m_values) {
             values.push_back(value.name);
         }
         return values;
     }
-    List<EnumInfo>::const_iterator GetValueInfo(StringView name) const {
+    Vector<EnumInfo>::const_iterator GetValueInfo(StringView name) const {
         return std::find_if(m_values.begin(), m_values.end(),
             [&name](const EnumInfo& info) { return name == info.name; });
     }
 };
 
 template <typename BaseType, typename EnumT, typename InfoDetail>
-class EnumMeta: public EnumMetaBase<BaseType, InfoDetail> {
+class EnumMeta final: public EnumMetaBase<BaseType, InfoDetail> {
 public:
     using EnumInfo = typename EnumMetaBase<BaseType, InfoDetail>::EnumInfo;
     using Enum = typename EnumMetaBase<BaseType, InfoDetail>::Enum;
@@ -74,8 +78,8 @@ public:
 
     Enum AddValue(const char* name, InfoDetail detail = InfoDetail{}) {
         EnumInfo info{name, detail};
-        m_values.push_back(info);
-        return &m_values.back();
+        this->m_values.push_back(info);
+        return &this->m_values.back();
     }
     Enum AddValue(StringView name, InfoDetail detail = InfoDetail{}) {
         return AddValue(name.data(), detail);

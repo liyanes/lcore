@@ -3,6 +3,7 @@
 #include "lcore/container/list.hpp"
 #include "lcore/container/vector.hpp"
 #include "lcore/string.hpp"
+#include <typeindex>
 
 LCORE_OBJ_NAMESPACE_BEGIN
 
@@ -11,14 +12,18 @@ class StructMeta;
 
 /// @brief StructMetaBase is a base class for struct metadata that provides a way to define and manage metadata for structs.
 /// @tparam BaseType An identifier for the base type of the struct. This is used to differentiate between different struct metadata types.
-template <typename BaseType, typename NameType = StringView>
+template <typename BaseT, typename NameT = StringView>
 class StructMetaBase {
-    static List<StructMetaBase*> m_allStructMetas;
     const std::type_info* m_typeInfo;
     const size_t m_size;
+
+    static List<StructMetaBase*>& GetAllStructMetas() {
+        static List<StructMetaBase*> allStructMetas;
+        return allStructMetas;
+    };
 public:
-    using BaseType = BaseType;
-    using NameType = NameType;
+    using BaseType = BaseT;
+    using NameType = NameT;
 
     /// @brief StructKeyInfo is a structure that holds information about a key in the struct
     struct StructKeyInfo {
@@ -31,14 +36,19 @@ public:
 protected:
     Vector<StructKeyInfo> m_keys;
     
+    static void Register(StructMetaBase* meta) { 
+        GetAllStructMetas().push_back(meta); 
+    }
     StructMetaBase(const std::type_info* typeInfo, size_t size) : m_typeInfo(typeInfo), m_size(size) { Register(this); }
-    static void Register(StructMetaBase* meta) { m_allStructMetas.push_back(meta); }
 public:
     StructMetaBase(const StructMetaBase&) = delete;
     StructMetaBase& operator=(const StructMetaBase&) = delete;
+    // Register(this), `this` is incompatible with move constructor
+    StructMetaBase(StructMetaBase&&) = delete;
+    StructMetaBase& operator=(StructMetaBase&&) = delete;
 
     static StructMetaBase* FindByType(const std::type_info& typeInfo) {
-        for (auto& meta : m_allStructMetas) {
+        for (auto& meta : GetAllStructMetas()) {
             if (*meta->m_typeInfo == typeInfo) {
                 return meta;
             }
@@ -85,22 +95,22 @@ class StructMeta final: public StructMetaBase<BaseType, NameType> {
 
     using StructType = T;
 public:
-    StructMeta() : StructMetaBase(&typeid(T), sizeof(T)) {}
+    StructMeta() : StructMetaBase<BaseType, NameType>(&typeid(T), sizeof(T)) {}
 
     template <typename KeyType>
     requires std::is_trivially_copyable_v<KeyType>
     StructMeta& AddKey(NameType name, size_t offset) {
-        m_keys.push_back({name, offset, sizeof(KeyType), &typeid(KeyType), nullptr});
-        return this;
+        this->m_keys.push_back({name, offset, sizeof(KeyType), &typeid(KeyType), nullptr});
+        return *this;
     }
 
     template <typename StructType>
     requires std::is_class_v<StructType> && std::is_trivially_copyable_v<StructType>
     StructMeta& AddStructKey(NameType name, size_t offset) {
-        auto structMeta = StructMetaBase::FindByType(typeid(StructType));
+        auto structMeta = StructMetaBase<BaseType, NameType>::FindByType(typeid(StructType));
         if (!structMeta) throw;
-        m_keys.push_back({name, offset, sizeof(StructType), &typeid(StructType), structMeta});
-        return this;
+        this->m_keys.push_back({name, offset, sizeof(StructType), &typeid(StructType), structMeta});
+        return *this;
     }
 };
 

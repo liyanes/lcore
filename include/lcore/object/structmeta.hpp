@@ -89,7 +89,7 @@ public:
 /// @note You must hold this object to access the metadata of the struct. Do not release it until you are done with the metadata.
 template <typename BaseType, typename T, typename NameType>
 class StructMeta final: public StructMetaBase<BaseType, NameType> {
-    static_assert(std::is_trivially_copyable_v<T>, "StructMeta can only be used with trivially copyable types");
+    static_assert(std::is_copy_constructible_v<T>, "StructMeta can only be used with trivially copyable types");
     static_assert(!std::is_pointer_v<T>, "StructMeta cannot be used with pointer types");
     static_assert(std::derived_from<T, BaseType>, "StructMeta can only be used with types that derive from BaseType");
 
@@ -98,14 +98,14 @@ public:
     StructMeta() : StructMetaBase<BaseType, NameType>(&typeid(T), sizeof(T)) {}
 
     template <typename KeyType>
-    requires std::is_trivially_copyable_v<KeyType>
+    requires std::is_copy_constructible_v<KeyType>
     StructMeta& AddKey(NameType name, size_t offset) {
         this->m_keys.push_back({name, offset, sizeof(KeyType), &typeid(KeyType), nullptr});
         return *this;
     }
 
     template <typename StructType>
-    requires std::is_class_v<StructType> && std::is_trivially_copyable_v<StructType>
+    requires std::is_class_v<StructType> && std::is_copy_constructible_v<StructType>
     StructMeta& AddStructKey(NameType name, size_t offset) {
         auto structMeta = StructMetaBase<BaseType, NameType>::FindByType(typeid(StructType));
         if (!structMeta) throw;

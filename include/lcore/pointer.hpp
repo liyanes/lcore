@@ -230,6 +230,12 @@ public:
     requires IsDerivedFrom<U, T>
     inline constexpr WeakPtr(WeakPtr<U>&& ptr): std::weak_ptr<T>(std::move(ptr)) {};
 
+    template <typename U>
+    requires IsDerivedFrom<U, T>
+    inline constexpr WeakPtr& operator=(const Ptr<U>& ptr) noexcept {
+        return std::weak_ptr<T>::operator=(ptr);
+    }
+
     using std::weak_ptr<T>::operator=;
     using std::weak_ptr<T>::operator bool;
     using std::weak_ptr<T>::operator->;

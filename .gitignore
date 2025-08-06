@@ -14,7 +14,7 @@ CMakeSettings.json
 *.pcm
 
 # configure file
-/config.h
+include/lcore/config.h
 
 # disabled files
 *.disabled

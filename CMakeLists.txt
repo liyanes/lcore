@@ -30,7 +30,7 @@ endif()
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/config.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/lcore/config.h
 )
 
 FILE(GLOB_RECURSE SRC_FILES src/*.c*)
@@ -52,3 +52,51 @@ if (LCORE_ENABLE_TEST)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+# install the library
+include(GNUInstallDirs)
+
+install(TARGETS lcore
+    EXPORT LCoreTargets  # Provide target export for find_package
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}  # Static library
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}  # Dynamic library
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # Executables
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}  # Header files
+)
+
+# Install header files
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    # FILES_MATCHING PATTERN "*.h"
+    PATTERN "*.in" EXCLUDE  # Exclude config.h.in
+)
+
+# Export the targets for use with find_package
+install(EXPORT LCoreTargets
+    FILE LCoreTargets.cmake
+    NAMESPACE LCore::  # Target namespace
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LCore  # Installation directory for the export file
+)
+
+# Generate the LCoreConfig.cmake file
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/LCoreConfig.cmake.in  # Template file
+    ${CMAKE_CURRENT_BINARY_DIR}/LCoreConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LCore
+    PATH_VARS CMAKE_INSTALL_INCLUDEDIR CMAKE_INSTALL_LIBDIR
+)
+
+# Generate the version file
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/LCoreConfigVersion.cmake
+    VERSION 0.1
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/LCoreConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/LCoreConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LCore
+)

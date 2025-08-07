@@ -12,67 +12,73 @@ struct BaseType {};
 using BaseTypeMeta = StructMetaBase<BaseType>;
 
 struct MyStruct: BaseType {
-    using Meta = BaseTypeMeta::MetaType<MyStruct>;
-    static Meta thisMeta;
+    struct DataStruct {
+        int a = 1;
+        float b = 2.0f;
+        unsigned char c = 3;
+    };
 
-    int a = 1;
-    float b = 2.0f;
-    unsigned char c = 3;
+    using Meta = BaseTypeMeta::MetaType<DataStruct>;
+    static Meta thisMeta;
+    DataStruct data;
 };
 
-MyStruct::Meta MyStruct::thisMeta = MyStruct::Meta::NewMeta<MyStruct>();
+MyStruct::Meta MyStruct::thisMeta = MyStruct::Meta::NewMeta<MyStruct::DataStruct>();
 static auto _ = []() {
-    return &MyStruct::thisMeta.AddKey<int>("a", offsetof(MyStruct, a))
-        .AddKey<float>("b", offsetof(MyStruct, b))
-        .AddKey<unsigned char>("c", offsetof(MyStruct, c));
+    return &MyStruct::thisMeta.AddKey<int>("a", offsetof(MyStruct::DataStruct, a))
+        .AddKey<float>("b", offsetof(MyStruct::DataStruct, b))
+        .AddKey<unsigned char>("c", offsetof(MyStruct::DataStruct, c));
 }();
 
-struct MyComplexStruct: BaseType{
-    using Meta = BaseTypeMeta::MetaType<MyComplexStruct>;
+struct MyComplexStruct: BaseType {
+    struct DataStruct {
+        MyStruct::DataStruct myStruct;
+    };
+    
+    using Meta = BaseTypeMeta::MetaType<MyComplexStruct::DataStruct>;
     static Meta thisMeta;
-
-    MyStruct myStruct;
+    DataStruct data = {MyStruct::DataStruct()};
 };
 
-MyComplexStruct::Meta MyComplexStruct::thisMeta = MyComplexStruct::Meta::NewMeta<MyComplexStruct>();
+MyComplexStruct::Meta MyComplexStruct::thisMeta = MyComplexStruct::Meta::NewMeta<MyComplexStruct::DataStruct>();
 static auto _complex = []() {
-    return &MyComplexStruct::thisMeta.AddStructKey<MyStruct>("myStruct", offsetof(MyComplexStruct, myStruct));
+    return &MyComplexStruct::thisMeta.AddStructKey<MyStruct::DataStruct>("myStruct", offsetof(MyComplexStruct::DataStruct, myStruct));
 }();
 
 TEST(StructMetaTest, StructMetaCreation) {
     auto myStruct = MyStruct();
     auto& meta = MyStruct::thisMeta;
-    EXPECT_EQ(meta.GetSize(), sizeof(MyStruct));
+    EXPECT_EQ(meta.GetSize(), sizeof(MyStruct::DataStruct));
     EXPECT_EQ(meta.GetKeys().size(), 3);
-    EXPECT_EQ(meta.GetKeyInfo("a")->offset, offsetof(MyStruct, a));
-    EXPECT_EQ(meta.GetKeyInfo("b")->offset, offsetof(MyStruct, b));
-    EXPECT_EQ(meta.GetKeyInfo("c")->offset, offsetof(MyStruct, c));
+    EXPECT_EQ(meta.GetKeyInfo("a")->offset, offsetof(MyStruct::DataStruct, a));
+    EXPECT_EQ(meta.GetKeyInfo("b")->offset, offsetof(MyStruct::DataStruct, b));
+    EXPECT_EQ(meta.GetKeyInfo("c")->offset, offsetof(MyStruct::DataStruct, c));
 
     // Try to read the values
-    EXPECT_EQ(*reinterpret_cast<int*>(reinterpret_cast<char*>(&myStruct) + meta.GetKeyInfo("a")->offset), myStruct.a);
-    EXPECT_EQ(*reinterpret_cast<float*>(reinterpret_cast<char*>(&myStruct) + meta.GetKeyInfo("b")->offset), myStruct.b);
-    EXPECT_EQ(*reinterpret_cast<unsigned char*>(reinterpret_cast<char*>(&myStruct) + meta.GetKeyInfo("c")->offset), myStruct.c);
+    EXPECT_EQ(*reinterpret_cast<int*>(reinterpret_cast<char*>(&myStruct.data) + meta.GetKeyInfo("a")->offset), myStruct.data.a);
+    EXPECT_EQ(*reinterpret_cast<float*>(reinterpret_cast<char*>(&myStruct.data) + meta.GetKeyInfo("b")->offset), myStruct.data.b);
+    EXPECT_EQ(*reinterpret_cast<unsigned char*>(reinterpret_cast<char*>(&myStruct.data) + meta.GetKeyInfo("c")->offset), myStruct.data.c);
 }
 
 TEST(StructMetaTest, ComplexStructMetaCreation) {
     auto myComplexStruct = MyComplexStruct();
     auto& meta = MyComplexStruct::thisMeta;
-    EXPECT_EQ(meta.GetSize(), sizeof(MyComplexStruct));
+    EXPECT_EQ(meta.GetSize(), sizeof(MyComplexStruct::DataStruct));
     EXPECT_EQ(meta.GetKeys().size(), 1);
-    EXPECT_EQ(meta.GetKeyInfo("myStruct")->offset, offsetof(MyComplexStruct, myStruct));
+    EXPECT_EQ(meta.GetKeyInfo("myStruct")->offset, offsetof(MyComplexStruct::DataStruct, myStruct));
 
     // Try to read the values
     auto& myStructMeta = MyStruct::thisMeta;
-    auto myStructPtr = reinterpret_cast<MyStruct*>(reinterpret_cast<char*>(&myComplexStruct) + meta.GetKeyInfo("myStruct")->offset);
+    auto myStructPtr = reinterpret_cast<MyStruct::DataStruct*>(reinterpret_cast<char*>(&myComplexStruct.data) + meta.GetKeyInfo("myStruct")->offset);
     EXPECT_EQ(myStructPtr->a, 1);
     EXPECT_EQ(myStructPtr->b, 2.0f);
     EXPECT_EQ(myStructPtr->c, 3);
 
     // Check if the struct meta can be found by type
-    auto foundMeta = BaseTypeMeta::FindByType<MyComplexStruct>();
+    auto foundMeta = BaseTypeMeta::FindByType<MyComplexStruct::DataStruct>();
     EXPECT_EQ(foundMeta, &MyComplexStruct::thisMeta);
-    EXPECT_EQ(foundMeta->GetSize(), sizeof(MyComplexStruct));
-    EXPECT_EQ(foundMeta->GetKeyInfo("myStruct")->size, sizeof(MyStruct));
+    EXPECT_EQ(foundMeta->GetSize(), sizeof(MyComplexStruct::DataStruct));
+    EXPECT_EQ(foundMeta->GetKeyInfo("myStruct")->size, sizeof(MyStruct::DataStruct));
     EXPECT_EQ(foundMeta->GetKeyInfo("myStruct")->structMeta, &MyStruct::thisMeta);
 }
 

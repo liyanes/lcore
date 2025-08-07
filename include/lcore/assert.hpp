@@ -15,7 +15,7 @@
 
 #define LCORE_ASSERT(condition, msg)                                                            \
     do {                                                                                        \
-        if (!(condition)){                                                                      \
+        if (!bool(condition)){                                                                      \
             std::cerr << "Assertion failed: " << #condition << ", " << msg << std::endl;        \
             LCORE_ABORT();                                                                      \
         }                                                                                       \

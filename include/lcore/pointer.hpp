@@ -20,13 +20,18 @@ public:
     inline RawPtr(const RawPtr<T>& ptr): ptr(ptr.ptr) {}
     inline RawPtr(RawPtr<T>&& ptr): ptr(ptr.ptr) {ptr.ptr = nullptr;}
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires DerivedFrom<U, T>
     inline RawPtr(const RawPtr<U>& ptr): ptr(ptr.ptr) {}
 
     inline RawPtr<T>& operator=(const RawPtr<T>& ptr) noexcept {this->ptr = ptr.ptr; return *this;}
     inline RawPtr<T>& operator=(RawPtr<T>&& ptr) noexcept {this->ptr = ptr.ptr; ptr.ptr = nullptr; return *this;}
+    
     inline T* operator->() const noexcept {return ptr;}
-    inline T& operator*() const noexcept {return *ptr;}
+    inline auto operator*() const noexcept requires (!Void<T>) {return *ptr;}
+    inline void operator*() const requires Void<T> {
+        static_assert(!Void<T>, "Cannot dereference a void pointer");
+    }
+
     inline operator bool() const noexcept {return ptr != nullptr;}
     inline bool operator==(const RawPtr<T>& ptr) const noexcept {return this->ptr == ptr.ptr;}
     inline bool operator==(std::nullptr_t) const noexcept {return ptr == nullptr;}
@@ -41,7 +46,7 @@ public:
     inline T* Get() const noexcept {return ptr;}
 
     template <typename U>
-    requires IsDerivedFrom<U, T> || IsDerivedFrom<T, U>
+    requires DerivedFrom<U, T> || DerivedFrom<T, U>
     inline constexpr RawPtr<U> Cast() const noexcept {
         return static_cast<U*>(ptr);
     }
@@ -52,13 +57,13 @@ public:
     }
 
     template <typename U>
-    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
+    requires DerivedFrom<U, T> || DerivedFrom<T,U>
     inline constexpr RawPtr<U> ConstCast() const noexcept {
         return const_cast<U*>(ptr);
     }
 
     template <typename U>
-    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
+    requires DerivedFrom<U, T> || DerivedFrom<T,U>
     inline RawPtr<U> ReinterpretCast() const noexcept {
         return reinterpret_cast<U*>(ptr);
     }
@@ -78,35 +83,33 @@ public:
 /// @brief Smart pointer
 /// @tparam T The type of the pointer
 template <typename T>
-class Ptr: private std::shared_ptr<T> {
+class Ptr: public std::shared_ptr<T> {
 public:
     using std::shared_ptr<T>::shared_ptr;
     inline Ptr(std::shared_ptr<T>&& ptr): std::shared_ptr<T>(std::move(ptr)) {}
     
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires DerivedFrom<U, T>
     inline constexpr Ptr(const Ptr<U>& ptr): std::shared_ptr<T>(ptr) {};
 
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires DerivedFrom<U, T>
     inline constexpr Ptr(Ptr<U>&& ptr): std::shared_ptr<T>(std::move(ptr)) {};
 
     using std::shared_ptr<T>::operator=;
     using std::shared_ptr<T>::operator bool;
     using std::shared_ptr<T>::operator->;
     using std::shared_ptr<T>::operator*;
-    using std::shared_ptr<T>::operator==;
-    using std::shared_ptr<T>::operator!=;
-    using std::shared_ptr<T>::operator<;
-    using std::shared_ptr<T>::operator>;
-    using std::shared_ptr<T>::operator<=;
-    using std::shared_ptr<T>::operator>=;
+    
+    inline constexpr auto operator<=>(const Ptr<T>& other) const noexcept {
+        return this->get() <=> other.get();
+    }
 
     /// @brief Static cast the pointer
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
+    requires DerivedFrom<U, T> || DerivedFrom<T,U>
     inline Ptr<U> Cast() const noexcept {
         return std::static_pointer_cast<U>(*this);
     };
@@ -116,7 +119,7 @@ public:
     /// @return Ptr<U> The casted pointer, if failed, return nullptr
     /// @note Dynamic cast is slower and should be avoided if possible
     template <typename U>
-    // requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
+    // requires DerivedFrom<U, T> || DerivedFrom<T,U>
     inline Ptr<U> DynamicCast() const noexcept {
         return std::dynamic_pointer_cast<U>(*this);
     };
@@ -125,7 +128,7 @@ public:
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
+    requires DerivedFrom<U, T> || DerivedFrom<T,U>
     inline Ptr<U> ConstCast() const noexcept {
         return std::const_pointer_cast<U>(*this);
     };
@@ -134,7 +137,7 @@ public:
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T> || IsDerivedFrom<T,U>
+    requires DerivedFrom<U, T> || DerivedFrom<T,U>
     inline Ptr<U> ReinterpretCast() const noexcept {
         return std::reinterpret_pointer_cast<U>(*this);
     };
@@ -217,41 +220,32 @@ inline constexpr UniquePtr<T> MakeUniquePtr(Args&&... args) {
 /// @brief Weak pointer
 /// @tparam T The type of the pointer
 template <typename T>
-class WeakPtr: private std::weak_ptr<T> {
+class WeakPtr: public std::weak_ptr<T> {
 public:
     using std::weak_ptr<T>::weak_ptr;
     inline WeakPtr(std::weak_ptr<T>&& ptr): std::weak_ptr<T>(std::move(ptr)) {}
     
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires DerivedFrom<U, T>
     inline constexpr WeakPtr(const WeakPtr<U>& ptr): std::weak_ptr<T>(ptr) {};
 
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires DerivedFrom<U, T>
     inline constexpr WeakPtr(WeakPtr<U>&& ptr): std::weak_ptr<T>(std::move(ptr)) {};
 
-    template <typename U>
-    requires IsDerivedFrom<U, T>
-    inline constexpr WeakPtr& operator=(const Ptr<U>& ptr) noexcept {
-        return std::weak_ptr<T>::operator=(ptr);
-    }
+    // template <typename U>
+    // requires DerivedFrom<U, T>
+    // inline constexpr WeakPtr& operator=(const Ptr<U>& ptr) noexcept {
+    //     return std::weak_ptr<T>::operator=(ptr);
+    // }
 
     using std::weak_ptr<T>::operator=;
-    using std::weak_ptr<T>::operator bool;
-    using std::weak_ptr<T>::operator->;
-    using std::weak_ptr<T>::operator*;
-    using std::weak_ptr<T>::operator==;
-    using std::weak_ptr<T>::operator!=;
-    using std::weak_ptr<T>::operator<;
-    using std::weak_ptr<T>::operator>;
-    using std::weak_ptr<T>::operator<=;
-    using std::weak_ptr<T>::operator>=;
 
     /// @brief Static cast the pointer
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires DerivedFrom<U, T>
     inline constexpr Ptr<U> Cast() const noexcept {
         return std::static_pointer_cast<U>(std::weak_ptr<T>::lock());
     };
@@ -261,7 +255,7 @@ public:
     /// @return Ptr<U> The casted pointer, if failed, return nullptr
     /// @note Dynamic cast is slower and should be avoided if possible
     template <typename U>
-    // requires IsDerivedFrom<U, T>
+    // requires DerivedFrom<U, T>
     inline constexpr Ptr<U> DynamicCast() const noexcept {
         return std::dynamic_pointer_cast<U>(std::weak_ptr<T>::lock());
     };
@@ -270,7 +264,7 @@ public:
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires DerivedFrom<U, T>
     inline constexpr Ptr<U> ConstCast() const noexcept {
         return std::const_pointer_cast<U>(std::weak_ptr<T>::lock());
     };
@@ -279,7 +273,7 @@ public:
     /// @tparam U The type to cast to
     /// @return Ptr<U> The casted pointer
     template <typename U>
-    requires IsDerivedFrom<U, T>
+    requires DerivedFrom<U, T>
     inline constexpr Ptr<U> ReinterpretCast() const noexcept {
         return std::reinterpret_pointer_cast<U>(std::weak_ptr<T>::lock());
     };
@@ -295,12 +289,6 @@ public:
     /// @brief Get Ptr<T> from the weak pointer
     inline Ptr<T> Lock() const noexcept {
         return std::weak_ptr<T>::lock();
-    };
-
-    /// @brief Get the raw pointer
-    /// @return RawPtr<T> The raw pointer
-    inline RawPtr<T> Get() const noexcept {
-        return std::weak_ptr<T>::lock().Get();
     };
 
     /// @brief Reset the weak pointer

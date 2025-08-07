@@ -17,13 +17,13 @@ LCORE_NAMESPACE_BEGIN
 /// @return The string representation of the value
 template <typename T>
 inline std::string repr(T&& value){
-    if constexpr (IsDerivedFrom<std::decay_t<T>, std::string>){
+    if constexpr (DerivedFrom<std::decay_t<T>, std::string>){
         return (std::stringstream() << std::quoted(std::forward<T>(value))).str();
-    }else if constexpr (IsDerivedFrom<std::decay_t<T>, std::string_view>){
+    }else if constexpr (DerivedFrom<std::decay_t<T>, std::string_view>){
         return (std::stringstream() << std::quoted(std::string(value))).str();
     }else if constexpr (fmt::has_formatter<std::decay_t<T>, fmt::format_context>::value){
         return fmt::format("{}", std::forward<T>(value));
-    }else if constexpr (IsPointer<std::decay_t<T>>){
+    }else if constexpr (Pointer<std::decay_t<T>>){
         if (value == nullptr) return "<nullptr>";
         return fmt::format("<{}->{}>", (void*)value, repr(*value));
     }else if constexpr (IsMap<std::decay_t<T>>){

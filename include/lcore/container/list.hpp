@@ -28,7 +28,7 @@ public:
     }
 
     template <typename Func>
-    requires IsCallable<Func, const T&> && IsSame<ResultCallable<Func, const T&>, bool>
+    requires IsCallable<Func, const T&> && Same<ResultCallable<Func, const T&>, bool>
     inline bool contains(Func f) const {
         return std::find_if(std::begin(*this), std::end(*this), f) != std::end(*this);
     }
@@ -40,13 +40,13 @@ public:
     }
 
     template <typename Func>
-    requires IsCallable<Func, const T&> && IsSame<ResultCallable<Func, const T&>, bool>
+    requires IsCallable<Func, const T&> && Same<ResultCallable<Func, const T&>, bool>
     inline void remove_if(Func f){
         std::erase(std::remove_if(std::begin(*this), std::end(*this), f), std::end(*this));
     }
 
     template <Iterable tContainer>
-    requires IsSame<IterableValueType<tContainer>, T>
+    requires Same<IterableValueType<tContainer>, T>
     inline void extends(const tContainer& other){
         this->insert(std::end(*this), std::begin(other), std::end(other));
     }
@@ -59,13 +59,13 @@ public:
     }
 
     template <typename Func>
-    requires IsCallable<Func, const T&> && IsSame<ResultCallable<Func, const T&>, bool>
+    requires IsCallable<Func, const T&> && Same<ResultCallable<Func, const T&>, bool>
     inline iterator find_if(Func f) {
         return std::find_if(std::begin(*this), std::end(*this), f);
     }
 
     template <typename Func>
-    requires IsCallable<Func, const T&> && IsSame<ResultCallable<Func, const T&>, bool>
+    requires IsCallable<Func, const T&> && Same<ResultCallable<Func, const T&>, bool>
     inline const_iterator find_if(Func f) const {
         return std::find_if(std::cbegin(this), std::cend(this), f);
     }

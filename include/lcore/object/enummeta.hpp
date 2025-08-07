@@ -89,19 +89,23 @@ public:
 /**
  * How to use EnumMeta:
  * ```cpp
- * struct MyEnumBase {};
  * template <typename T>
- * class MyEnum: public EnumMeta<MyEnumBase, T> {};
- * // In else .cpp file:
- * // List<MyEnumBase*> MyEnumBase::m_allEnumMetas;
+ * class MyEnum: public EnumMeta<decltype(struct MyEnumBase {}), T> {};
  * 
  * struct MyFirstEnum: MyEnumBase {
- *     static MyEnum<MyFirstEnum> value1, 
- *           value2;  
+ *     using Enum = typename MyEnum<MyFirstEnum>::Enum;
+ *     static Enum value1;
+ *     static Enum value2;  
  * };
- * auto MyFirstEnumMeta = MyEnum<MyFirstEnum>::NewMeta();
- * MyFirstEnum::value1 = MyFirstEnumMeta.AddValue("Value1", "This is the first enum value");
- * MyFirstEnum::value2 = MyFirstEnumMeta.AddValue("Value2", "This is the second enum value");
+ * static auto MyFirstEnumMeta = MyEnum<MyFirstEnum>::NewMeta();
+ * sttaic auto _ = [] {
+ *     MyFirstEnumMeta.AddValue("Value1", "This is the first enum value");
+ *     MyFirstEnumMeta.AddValue("Value2", "This is the second enum value");
+ *     return 0;
+ * };
+ * 
+ * // Usage:
+ * auto meta = MyFirstEnumMeta.FindByType<MyFirstEnum>();
  * ```
  */
 

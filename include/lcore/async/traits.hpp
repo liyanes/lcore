@@ -9,22 +9,22 @@ LCORE_NAMESPACE_BEGIN
 
 template <typename T>
 concept HasCoAwaitOperator = requires(T t){
-    {t.operator co_await()} -> IsSame<std::suspend_always>;
+    {t.operator co_await()} -> Same<std::suspend_always>;
 };
 
 template <typename T>
 concept IsCoroutineHandle = requires(T t){
     {t.resume()};
-    {t.done()} -> IsSame<bool>;
+    {t.done()} -> Same<bool>;
     {t.destroy()};
 };
 
 template <typename T>
 concept IsAwaitableImplement = requires(T t){
     typename T::value_type;
-    {t.await_ready()} -> IsSame<bool>;
+    {t.await_ready()} -> Same<bool>;
     {t.await_suspend()} -> IsCoroutineHandle;
-    {t.await_resume()} -> IsSame<typename T::value_type>;
+    {t.await_resume()} -> Same<typename T::value_type>;
 };
 
 template <typename T>

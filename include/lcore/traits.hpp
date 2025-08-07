@@ -24,23 +24,23 @@ concept Signed = std::is_signed_v<T>;
 template <typename T>
 concept Real = Floating<T> || Integer<T>;
 
-template <typename T, typename U>
-concept IsSame = std::is_same_v<T, U>;
+template <typename T>
+concept Void = std::is_void_v<T>;
 
 template <typename T, typename ...Args>
-concept IsAllSame = (IsSame<T, Args> && ...);
+concept Same = (std::is_same_v<T, Args> && ...);
 
 template <typename T, typename ...Items>
-concept IsOneOf = (IsSame<T, Items> || ...);
+concept OneOf = (Same<T, Items> || ...);
 
 template <typename T>
-concept IsPointer = std::is_pointer_v<T>;
+concept Pointer = std::is_pointer_v<T>;
 
 template <auto T, auto U>
-concept IsEqual = IsSame<decltype(T), decltype(U)> && T == U;
+concept Equal = Same<decltype(T), decltype(U)> && T == U;
 
 template <auto T>
-concept IsTrue = std::bool_constant<T>::value;
+concept TrueType = std::bool_constant<T>::value;
 
 template <typename T>
 using RemoveReference = std::remove_reference_t<T>;
@@ -55,7 +55,7 @@ template <typename T>
 using RemoveCV = std::remove_cv_t<T>;
 
 template <typename T>
-concept IsReference = std::is_reference_v<T>;
+concept Reference = std::is_reference_v<T>;
 
 template <typename Func, typename ...Args>
 concept IsCallable = requires(Func func, Args... args){
@@ -72,7 +72,7 @@ template <typename Func, typename ArgsTuple>
 using ResultCallableOfTuple = decltype(std::apply(std::declval<Func>(), std::declval<ArgsTuple>()));
 
 template <typename T>
-concept IsConst = std::is_const_v<T>;
+concept Const = std::is_const_v<T>;
 
 /**
  * Iterator Traits, see also in std::ranges::iterator_traits
@@ -96,7 +96,7 @@ using IterableValueType = RemoveCV<RemoveReference<decltype(*std::declval<T>().b
 template <typename T>
 concept ConstIterable = requires(const T t){
     requires Iterable<T>;
-    requires IsConst<IterableValueType<T>>;
+    requires Const<IterableValueType<T>>;
 };
 
 
@@ -125,19 +125,16 @@ using ReturnType = decltype(std::declval<Func>()(std::declval<Args>()...));
 template <typename T>
 concept StringLike = requires(T t){
     requires Iterable<T>;
-    requires IsSame<IterableValueType<T>, char>;
-    {t.c_str()} -> IsOneOf<const char*, const char[]>;
-    {t.size()} -> IsSame<size_t>;
+    requires Same<IterableValueType<T>, char>;
+    {t.c_str()} -> OneOf<const char*, const char[]>;
+    {t.size()} -> Same<size_t>;
 };
 
 template <typename T>
-concept IsStandardLayout = std::is_standard_layout_v<T>;
+concept StandardLayout = std::is_standard_layout_v<T>;
 
 template <typename T>
-concept IsTrivial = std::is_trivial_v<T>;
-
-template <typename T>
-concept IsPOD = IsStandardLayout<T> && IsTrivial<T>;
+concept Trivial = std::is_trivial_v<T>;
 
 /// @brief Simple type (not class or pointer or reference)
 /// @tparam T The type to be checked
@@ -147,7 +144,7 @@ concept SimpleType = !std::is_class_v<T> && !std::is_pointer_v<T> && !std::is_re
 /// @brief Enum type
 /// @tparam T The type to be checked
 template <typename T>
-concept IsEnum = std::is_enum_v<T>;
+concept Enum = std::is_enum_v<T>;
 
 /// @brief Underlying type of an enum
 /// @tparam T The enum type
@@ -155,10 +152,13 @@ template <typename T>
 using UnderlyingType = std::underlying_type_t<T>;
 
 template <typename T, typename Base>
-concept IsDerivedFrom = std::is_base_of_v<Base, T>;
+concept DerivedFrom = std::is_base_of_v<Base, T>;
 
 template <typename T, typename U>
 concept CanConvTo = std::is_convertible_v<T, U>;
+
+template <typename T, typename U>
+concept ConvertibleTo = std::is_convertible_v<T, U>;
 
 #define GetMemberType(ParentType, MemberName) (decltype(std::declval<ParentType>.##MemberName))
 
@@ -189,18 +189,18 @@ inline constexpr size_t IndexOf = _IndexOf<T, Args...>::value;
 
 template <typename T, typename U>
 concept Comparable = requires(T t, U u){
-    {t == u} -> IsSame<bool>;
-    {t != u} -> IsSame<bool>;
-    {t < u} -> IsSame<bool>;
-    {t > u} -> IsSame<bool>;
-    {t <= u} -> IsSame<bool>;
-    {t >= u} -> IsSame<bool>;
+    {t == u} -> Same<bool>;
+    {t != u} -> Same<bool>;
+    {t < u} -> Same<bool>;
+    {t > u} -> Same<bool>;
+    {t <= u} -> Same<bool>;
+    {t >= u} -> Same<bool>;
 };
 
 template <typename T, typename U>
 concept EqualComparable = requires(T t, U u){
-    {t == u} -> IsSame<bool>;
-    {t != u} -> IsSame<bool>;
+    {t == u} -> Same<bool>;
+    {t != u} -> Same<bool>;
 };
 
 template <bool Cond, typename T = void>
@@ -211,7 +211,7 @@ using Conditional = std::conditional_t<Cond, T, F>;
 
 template <typename T, typename Args>
 concept ConstructibleWith = requires(T t, Args args){
-    {T(args)} -> IsSame<T>;
+    {T(args)} -> Same<T>;
 };
 
 template <typename T>

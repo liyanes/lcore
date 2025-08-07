@@ -40,7 +40,7 @@ public:
 
 template <typename FGet, typename FSet, typename FDelete>
 concept IsAccessorFunctuple = requires(FGet _get, FSet _set, FDelete _delete){
-    // {_get()} -> IsReference;s
+    // {_get()} -> Reference;s
     _set(_get());
     _delete();
 };
@@ -103,7 +103,7 @@ inline Accessor<ResultCallable<FGet>> MakeAccessor(const FGet& get, const FSet& 
 }
 
 template <typename TType, typename FType>
-requires IsDerivedFrom<TType, FType>
+requires DerivedFrom<TType, FType>
 inline Accessor<Ptr<FType>> CreatePtrAccessor(Ptr<TType>* pptr) {
     return MakeAccessor([pptr]()->Ptr<FType>{return *pptr;}, [pptr](Ptr<FType> value){*pptr = std::dynamic_pointer_cast<TType>(value);});
 }

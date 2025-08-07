@@ -16,7 +16,7 @@
 LCORE_NAMESPACE_BEGIN
 
 template <typename Handler>
-requires IsOneOf<DeclReturnType<Handler>, void, bool>
+requires OneOf<DeclReturnType<Handler>, void, bool>
 class Pipe {
     List<Handler> m_handlers;
 public:
@@ -32,7 +32,7 @@ public:
     }
     
     template <typename... Args>
-    requires IsSame<HandlerReturnType, void>
+    requires Same<HandlerReturnType, void>
     inline PipeReturnType operator()(Args... params){
         for (auto& handler: m_handlers){
             handler(params...);
@@ -41,7 +41,7 @@ public:
     }
 
     template <typename... Args>
-    requires IsSame<HandlerReturnType, bool>
+    requires Same<HandlerReturnType, bool>
     inline std::pair<bool, PipeReturnType> operator()(Args... params){
         for (auto& handler: m_handlers){
             if (handler(params...)){

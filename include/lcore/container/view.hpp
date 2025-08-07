@@ -83,7 +83,7 @@ public:
     }
     
     template <typename Func>
-    requires IsCallable<Func, T&> && IsSame<ResultCallable<Func, T&>, bool>
+    requires IsCallable<Func, T&> && Same<ResultCallable<Func, T&>, bool>
     inline std::vector<view_type> split(Func f) {
         std::vector<view_type> result;
         auto it = begin_;
@@ -177,7 +177,7 @@ public:
     }
     
     template <typename Func>
-    requires IsCallable<Func, const T&> && IsSame<ResultCallable<Func, const T&>, bool>
+    requires IsCallable<Func, const T&> && Same<ResultCallable<Func, const T&>, bool>
     inline std::vector<view_type> split(Func f) const {
         std::vector<view_type> result;
         auto it = begin_;
@@ -262,7 +262,7 @@ public:
     }
 
     template <typename Func>
-    requires IsCallable<Func, T&> && IsSame<ResultCallable<Func, T&>, bool>
+    requires IsCallable<Func, T&> && Same<ResultCallable<Func, T&>, bool>
     inline std::vector<view_type> split(Func f) {
         std::vector<view_type> result;
         auto it = begin_;
@@ -347,7 +347,7 @@ public:
     }
 
     template <typename Func>
-    requires IsCallable<Func, const T&> && IsSame<ResultCallable<Func, const T&>, bool>
+    requires IsCallable<Func, const T&> && Same<ResultCallable<Func, const T&>, bool>
     inline std::vector<view_type> split(Func f) const {
         std::vector<view_type> result;
         auto it = begin_;

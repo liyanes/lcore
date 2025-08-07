@@ -22,7 +22,7 @@ public:
     /// @tparam T The type to be checked
     /// @return True if the union is of the type
     template <typename T>
-    requires IsOneOf<T, Args...>
+    requires OneOf<T, Args...>
     inline bool is() const {
         return this->index() == IndexOf<T, Args...>;
     }
@@ -31,7 +31,7 @@ public:
     /// @tparam T The type to be checked
     /// @return The value of the union if it is of the type
     template <typename T>
-    requires IsOneOf<T, Args...>
+    requires OneOf<T, Args...>
     inline T& get() {
         return std::get<T>(*this);
     }
@@ -40,13 +40,13 @@ public:
     /// @tparam T The type to be checked
     /// @return The value of the union if it is of the type
     template <typename T>
-    requires IsOneOf<T, Args...>
+    requires OneOf<T, Args...>
     inline const T& get() const {
         return std::get<T>(*this);
     }
     
     template <typename T>
-    requires IsOneOf<T, Args...>
+    requires OneOf<T, Args...>
     inline T getdefault(T value) const {
         if (is<T>()){
             return get<T>();

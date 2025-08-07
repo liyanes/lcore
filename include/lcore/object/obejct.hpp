@@ -40,21 +40,21 @@ public:
     size_t shared_ref_count;
 
     template <typename T>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     Aggregator(RawPtr<T> createdObject): shared_ref_count(1) {
         if (!objects.insert({T::GetTypeId(), {createdObject, 1}}).second) 
             LCORE_FATAL("Failed to create aggregator");
     }
 
     template <typename T>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     Aggregator(RawPtr<T> createdObject, size_t initial_count): shared_ref_count(initial_count) {
         if (!objects.insert({T::GetTypeId(), {createdObject, initial_count}}).second) 
             LCORE_FATAL("Failed to create aggregator");
     }
 
     template <typename T>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     void AddObject(RawPtr<T> obj){
         LCORE_ASSERT(obj != nullptr, "Object is nullptr");
 
@@ -73,7 +73,7 @@ public:
     }
 
     template <typename T>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     Ptr<T> ReleaseObject(){
         auto it = objects.find(T::GetTypeId());
         if (it != objects.end()){    
@@ -96,7 +96,7 @@ public:
     }
 
     template <typename T>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     Ptr<T> GetObject(){
         auto it = objects.find(T::GetTypeId());
         if (it != objects.end()){
@@ -142,7 +142,7 @@ public:
     }
 
     template <typename T, typename ...Args>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     inline static Ptr<T> New(Args ...args){
         Ptr<T> obj = Ptr<T>(new T(std::forward(args)...), ObjectDeleter::Delete);
         obj->aggregator = new Aggregator(RawPtr<T>(obj.Get()));
@@ -163,19 +163,19 @@ public:
     }
 
     template <typename T>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     inline void Aggregate(Ptr<T> obj){
         aggregator->AddObject<T>(obj.Get());
     }
 
     template <typename T>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     inline Ptr<T> GetObject(){
         return aggregator->GetObject<T>();
     }
 
     template <typename T>
-    requires IsDerivedFrom<T, Object>
+    requires DerivedFrom<T, Object>
     inline Ptr<T> ReleaseObject(){
         return aggregator->ReleaseObject<T>();
     }
@@ -208,7 +208,7 @@ inline void ObjectDeleter::Delete(Object* obj){
 /// @param ...args The arguments to pass to the constructor
 /// @return Ptr<T> The created object
 template <typename T, typename ...Args>
-requires IsDerivedFrom<T, Object>
+requires DerivedFrom<T, Object>
 Ptr<T> NewObject(Args ...args){
     return Object::New<T>(std::forward(args)...);
 }

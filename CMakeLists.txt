@@ -42,6 +42,15 @@ set_target_properties(lcore PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
+if (LCORE_DEBUG)
+    # Enable all warnings and treat warnings as errors
+    if (MSVC)
+        target_compile_options(lcore PRIVATE /W4 /WX)
+    else()
+        target_compile_options(lcore PRIVATE -Wall -Wextra -Werror -Wpedantic)
+    endif()
+endif ()
+
 # add postfix if debug
 set_target_properties(lcore PROPERTIES DEBUG_POSTFIX "d")
 

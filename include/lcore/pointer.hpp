@@ -224,7 +224,7 @@ public:
     }
 
     void Deallocate() override {
-        using AllocTraits = std::allocator_traits<Allocator>;
+        // using AllocTraits = std::allocator_traits<Allocator>;
         auto alloc = allocator;
         Allocator::destroy(alloc, this);
         Allocator::deallocate(alloc, this, 1);

@@ -2,6 +2,7 @@
 #include "base.hpp"
 #include "traits.hpp"
 #include <atomic>
+#include <memory>
 
 #ifdef LCORE_DEBUG
 #include "assert.hpp"
@@ -34,8 +35,6 @@ public:
     using Type = T;
     using Pointer = Type*;
     using ConstPointer = const Type*;
-    using Reference = Type&;
-    using ConstReference = const Type&;
 
     inline constexpr RawPtr() = default;
     inline constexpr RawPtr(T* ptr): ptr(ptr) {}
@@ -43,11 +42,21 @@ public:
     inline constexpr RawPtr(const RawPtr<T>& ptr): ptr(ptr.ptr) {}
     inline constexpr RawPtr(RawPtr<T>&& ptr): ptr(ptr.ptr) {ptr.ptr = nullptr;}
     template <typename U>
-    requires DerivedFrom<U, T>
+    requires (DerivedFrom<U, T> || Same<T, void>)
     inline constexpr RawPtr(const RawPtr<U>& ptr): ptr(ptr.ptr) {}
 
     inline constexpr RawPtr<T>& operator=(const RawPtr<T>& ptr) noexcept {this->ptr = ptr.ptr; return *this;}
     inline constexpr RawPtr<T>& operator=(RawPtr<T>&& ptr) noexcept {this->ptr = ptr.ptr; ptr.ptr = nullptr; return *this;}
+    template <typename U>
+    requires (DerivedFrom<U, T> || Same<T, void>)
+    inline constexpr RawPtr<T>& operator=(const RawPtr<U>& ptr) noexcept { this->ptr = ptr.ptr; return *this; }
+    
+    // inline constexpr RawPtr<T>& operator=(T* ptr) noexcept {this->ptr = ptr; return *this;}
+    // template <typename U>
+    // requires (DerivedFrom<U, T> || Same<T, void>)
+    // inline constexpr RawPtr<T>& operator=(U* ptr) noexcept { this->ptr = static_cast<T*>(ptr); return *this; }
+    
+    inline constexpr RawPtr<T>& operator=(std::nullptr_t) noexcept {this->ptr = nullptr; return *this;}
     
     inline constexpr T* operator->() const noexcept {
         _LCORE_CHECK_PTR_NOTZERO(ptr);
@@ -67,6 +76,14 @@ public:
     }
     inline constexpr auto operator==(std::nullptr_t) const noexcept { return ptr == nullptr; }
     inline constexpr auto operator!=(std::nullptr_t) const noexcept { return ptr != nullptr; }
+    template <typename U>
+    inline constexpr auto operator==(const RawPtr<U>& other) const noexcept { return ptr == other.ptr; }
+    template <typename U>
+    inline constexpr auto operator!=(const RawPtr<U>& other) const noexcept { return ptr != other.ptr; }
+    template <typename U>
+    inline constexpr auto operator==(const U* other) const noexcept { return ptr == other; }
+    template <typename U>
+    inline constexpr auto operator!=(const U* other) const noexcept { return ptr != other; }
 
     inline constexpr bool IsConst() const noexcept {return std::is_const_v<T>;}
     inline constexpr T* Get() const noexcept {return ptr;}
@@ -85,7 +102,7 @@ public:
     }
 
     template <typename U>
-    requires DerivedFrom<U, T> || DerivedFrom<T, U> || Same<U, T>
+    requires DerivedFrom<U, T> || DerivedFrom<T, U> || OneOf<void, T, U>
     inline constexpr RawPtr<U> Cast() const noexcept {
         return static_cast<U*>(ptr);
     }
@@ -113,16 +130,15 @@ namespace _detail {
 template <template <typename> typename AtomicType = std::atomic>
 class ControlBlockBase {
 public:
-    void* ptr = nullptr;    // ptr will not updated until the control block is destroyed, we don't need to use atomic for it
+    void* ptr;    // ptr will not updated until the control block is destroyed, we don't need to use atomic for it
     AtomicType<size_t> shared_count = 1; // Start with 1 for the initial shared_ptr
     AtomicType<size_t> weak_count = 0;
 
-    ControlBlockBase() = default;
     ControlBlockBase(void* p): ptr(p) {}
     template <typename T>
     ControlBlockBase(RawPtr<T> p): ptr(p.Get()) {}
 
-    /// @brief Destroy the object
+    /// @brief Destroy the object (Do not deallocate the memory!!!)
     virtual void Destory() = 0;
     /// @brief Deallocate the memory of this control block
     virtual void Deallocate() = 0;
@@ -131,6 +147,15 @@ public:
     void Ref() noexcept { ++shared_count; }
     bool Unref() {
         if (--shared_count == 0) {
+            /**
+             * Why weak_count is cached here?
+             * When Destory() is called, the target object may own weak references to this control block.
+             * WeakUnref() will be called and weak_count will be decremented.
+             * if weak_count reaches 0, this control block will be deallocated by WeakUnref().
+             * When Destory() is returned, this control block is deallocated and the weak_count is no longer valid.
+             * So we cache the weak_count before calling Destory() to ensure that we can safely check if the control block is deallocated.
+             */
+            size_t weak_count = this->weak_count;
             Destory();
             if (weak_count == 0) {
                 Deallocate();
@@ -158,7 +183,6 @@ public:
     
     void Destory() override {
         delete static_cast<T*>(this->ptr);
-        this->ptr = nullptr;
     }
 
     void Deallocate() override {
@@ -177,7 +201,6 @@ public:
 
     void Destory() override {
         deleter(static_cast<T*>(this->ptr));
-        this->ptr = nullptr;
     }
 
     void Deallocate() override {
@@ -198,7 +221,6 @@ public:
 
     void Destory() override {
         deleter(this->ptr);
-        this->ptr = nullptr;
     }
 
     void Deallocate() override {
@@ -243,12 +265,12 @@ public:
         other.m_cb = nullptr;
     }
     template <typename U>
-    requires DerivedFrom<U, T>
+    requires DerivedFrom<U, T> || Same<T, void>
     inline SharedPtr(const SharedPtr<U>& other) noexcept: m_tptr(other.m_tptr.template Cast<T>()), m_cb(other.m_cb) {
         if (m_cb) m_cb->Ref();
     }
     template <typename U>
-    requires DerivedFrom<U, T>
+    requires DerivedFrom<U, T> || Same<T, void>
     inline SharedPtr(SharedPtr<U>&& other) noexcept: m_tptr(other.m_tptr.template Cast<T>()), m_cb(other.m_cb) {
         other.m_tptr = nullptr;
         other.m_cb = nullptr;
@@ -262,42 +284,42 @@ public:
     }
 
     // operators
-    template <typename U>
-    requires DerivedFrom<U, T>
-    inline SharedPtr<T>& operator=(const SharedPtr<U>& other) noexcept {
-        if constexpr (Same<U, T>) {
-            if (this != &other) {
-                if (m_cb) m_cb->Unref();
-                m_tptr = other.m_tptr.template Cast<T>();
-                m_cb = other.m_cb;
-                if (m_cb) m_cb->Ref();
-            }
-        } else {
+    inline SharedPtr<T>& operator=(const SharedPtr<T>& other) noexcept {
+        if (this != &other) {
             if (m_cb) m_cb->Unref();
-            m_tptr = other.m_tptr.template Cast<T>();
+            m_tptr = other.m_tptr;
             m_cb = other.m_cb;
             if (m_cb) m_cb->Ref();
-        };
+        }
         return *this;
     }
-    template <typename U>
-    requires DerivedFrom<U, T>
-    inline SharedPtr<T>& operator=(SharedPtr<U>&& other) noexcept {
-        if constexpr (Same<U, T>) {
-            if (this != &other) {
-                if (m_cb) m_cb->Unref();
-                m_tptr = other.m_tptr.template Cast<T>();
-                m_cb = std::move(other.m_cb);
-                other.m_tptr = nullptr;
-                other.m_cb = nullptr;
-            }
-        } else {
+    inline SharedPtr<T>& operator=(SharedPtr<T>&& other) noexcept {
+        if (this != &other) {
             if (m_cb) m_cb->Unref();
-            m_tptr = other.m_tptr.template Cast<T>();
+            m_tptr = std::move(other.m_tptr);
             m_cb = std::move(other.m_cb);
             other.m_tptr = nullptr;
             other.m_cb = nullptr;
         }
+        return *this;
+    }
+    template <typename U>
+    requires (DerivedFrom<U, T> && !Same<U, T>) || Same<T, void>
+    inline SharedPtr<T>& operator=(const SharedPtr<U>& other) noexcept {
+        if (m_cb) m_cb->Unref();
+        m_tptr = other.m_tptr.template Cast<T>();
+        m_cb = other.m_cb;
+        if (m_cb) m_cb->Ref();
+        return *this;
+    }
+    template <typename U>
+    requires (DerivedFrom<U, T> && !Same<U, T>) || Same<T, void>
+    inline SharedPtr<T>& operator=(SharedPtr<U>&& other) noexcept {
+        if (m_cb) m_cb->Unref();
+        m_tptr = other.m_tptr.template Cast<T>();
+        m_cb = std::move(other.m_cb);
+        other.m_tptr = nullptr;
+        other.m_cb = nullptr;
         return *this;
     }
 
@@ -348,7 +370,7 @@ public:
     // Cast methods
     /// @brief Static cast the pointer
     template <typename U>
-    requires DerivedFrom<U, T> || DerivedFrom<T, U>
+    requires DerivedFrom<U, T> || DerivedFrom<T, U> || OneOf<void, T, U>
     inline SharedPtr<U> Cast() const noexcept {
         return SharedPtr<U>(m_tptr.template Cast<U>(), m_cb);
     }
@@ -412,13 +434,13 @@ public:
         if (m_cb) m_cb->WeakRef();
     }
     template <typename U>
-    requires DerivedFrom<U, T>
+    requires DerivedFrom<U, T> || Same<T, void>
     inline WeakPtr(WeakPtr<U>&& other) noexcept: m_tptr(other.m_tptr.template Cast<T>()), m_cb(other.m_cb) {
         other.m_tptr = nullptr;
         other.m_cb = nullptr;
     }
     template <typename U>
-    requires DerivedFrom<U, T>
+    requires DerivedFrom<U, T> || Same<T, void>
     inline WeakPtr(const SharedPtr<U>& other) noexcept: m_tptr(other.m_tptr.template Cast<T>()), m_cb(other.m_cb) {
         if (m_cb) m_cb->WeakRef();
     }
@@ -430,38 +452,19 @@ public:
         }
     }
     // operators
-    template <typename U>
-    requires DerivedFrom<U, T>
-    inline WeakPtr<T>& operator=(const WeakPtr<U>& other) noexcept {
-        if constexpr (Same<U, T>) {
-            if (this != &other) {
-                if (m_cb) m_cb->WeakUnref();
-                m_tptr = other.m_tptr.template Cast<T>();
-                m_cb = other.m_cb;
-                if (m_cb) m_cb->WeakRef();
-            }
-        } else {
+    inline WeakPtr<T>& operator=(const WeakPtr<T>& other) noexcept {
+        if (this != &other) {
             if (m_cb) m_cb->WeakUnref();
-            m_tptr = other.m_tptr.template Cast<T>();
+            m_tptr = other.m_tptr;
             m_cb = other.m_cb;
             if (m_cb) m_cb->WeakRef();
         }
         return *this;
     }
-    template <typename U>
-    requires DerivedFrom<U, T>
-    inline WeakPtr<T>& operator=(WeakPtr<U>&& other) noexcept {
-        if constexpr (Same<U, T>) {
-            if (this != &other) {
-                if (m_cb) m_cb->WeakUnref();
-                m_tptr = other.m_tptr.template Cast<T>();
-                m_cb = other.m_cb;
-                other.m_tptr = nullptr;
-                other.m_cb = nullptr;
-            }
-        } else {
+    inline WeakPtr<T>& operator=(WeakPtr<T>&& other) noexcept {
+        if (this != &other) {
             if (m_cb) m_cb->WeakUnref();
-            m_tptr = other.m_tptr.template Cast<T>();
+            m_tptr = std::move(other.m_tptr);
             m_cb = std::move(other.m_cb);
             other.m_tptr = nullptr;
             other.m_cb = nullptr;
@@ -469,7 +472,26 @@ public:
         return *this;
     }
     template <typename U>
-    requires DerivedFrom<U, T>
+    requires (DerivedFrom<U, T> && !Same<U, T>) || Same<T, void>
+    inline WeakPtr<T>& operator=(const WeakPtr<U>& other) noexcept {
+        if (m_cb) m_cb->WeakUnref();
+        m_tptr = other.m_tptr.template Cast<T>();
+        m_cb = other.m_cb;
+        if (m_cb) m_cb->WeakRef();
+        return *this;
+    }
+    template <typename U>
+    requires (DerivedFrom<U, T> && !Same<U, T>) || Same<T, void>
+    inline WeakPtr<T>& operator=(WeakPtr<U>&& other) noexcept {
+        if (m_cb) m_cb->WeakUnref();
+        m_tptr = other.m_tptr.template Cast<T>();
+        m_cb = std::move(other.m_cb);
+        other.m_tptr = nullptr;
+        other.m_cb = nullptr;
+        return *this;
+    }
+    template <typename U>
+    requires DerivedFrom<U, T>  || Same<T, void>
     inline WeakPtr<T>& operator=(const SharedPtr<U>& other) noexcept {
         if (m_cb) m_cb->WeakUnref();
         m_tptr = other.m_tptr.template Cast<T>();

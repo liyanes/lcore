@@ -1,28 +1,38 @@
 #pragma once
 #include "lcore/base.hpp"
-
-#ifdef LCORE_ENABLE_ASSERT
-
-#include <iostream> // std::cerr needs this
+#include <iostream>
 
 #ifdef LCORE_DEBUG
+
 #define LCORE_ABORT() do {              \
     __asm__ __volatile__("int $3");      \
 } while (0)
-#else
-#define LCORE_ABORT() do {std::abort();} while (0)
-#endif
 
+#ifdef LCORE_ENABLE_ASSERT
 #define LCORE_ASSERT(condition, msg)                                                            \
     do {                                                                                        \
         if (!bool(condition)){                                                                      \
             std::cerr << "Assertion failed: " << #condition << ", " << msg << std::endl;        \
             LCORE_ABORT();                                                                      \
         }                                                                                       \
-    } while (0)                                                                                 
-#else
+    } while (0)
+#endif // LCORE_ENABLE_ASSERT
+
+#define LCORE_LOG(content) do { \
+    std::cerr << "Log: " << __FILE__ << ":" << __LINE__ << ": " << __FUNCTION__ << ": " << content << std::endl; \
+} while (0)
+
+
+#else // not LCORE_DEBUG
+
+#define LCORE_ABORT() do {std::abort();} while (0)
+#define LCORE_LOG(content) do {} while (0)
+
+#endif // LCORE_DEBUG
+
+// Empty macro
+#ifndef LCORE_ASSERT
 #define LCORE_ASSERT(condition, msg) do {} while (0)
 #endif
 
-#include <iostream>
 #define LCORE_FATAL(msg) do {std::cerr << msg << std::endl; exit(-1);} while (0)

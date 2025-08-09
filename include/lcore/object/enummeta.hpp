@@ -99,13 +99,17 @@ public:
  * };
  * static auto MyFirstEnumMeta = MyEnum<MyFirstEnum>::NewMeta();
  * sttaic auto _ = [] {
- *     MyFirstEnumMeta.AddValue("Value1", "This is the first enum value");
- *     MyFirstEnumMeta.AddValue("Value2", "This is the second enum value");
+ *     MyFirstEnumMeta.AddValue("Value1");
+ *     MyFirstEnumMeta.AddValue("Value2");
  *     return 0;
  * };
  * 
  * // Usage:
  * auto meta = MyFirstEnumMeta.FindByType<MyFirstEnum>();
+ * 
+ * // **Important**:
+ * Do not copy these value in initialization of program, they will not be evaluated until the static setup is done.
+ * The program have no way to control the order of static initialization.
  * ```
  */
 

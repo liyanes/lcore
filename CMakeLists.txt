@@ -44,6 +44,7 @@ set_target_properties(lcore PROPERTIES
 
 if (LCORE_DEBUG)
     # Enable all warnings and treat warnings as errors
+    message(STATUS "Debug build: Enabling all warnings and treating warnings as errors")
     if (MSVC)
         target_compile_options(lcore PRIVATE /W4 /WX)
     else()

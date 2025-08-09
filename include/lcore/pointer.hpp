@@ -62,7 +62,7 @@ public:
         _LCORE_CHECK_PTR_NOTZERO(ptr);
         return ptr;
     }
-    inline constexpr auto operator*() const noexcept requires (!Void<T>) {
+    inline constexpr auto& operator*() const noexcept requires (!Void<T>) {
         _LCORE_CHECK_PTR_NOTZERO(ptr);
         return *ptr;
     }
@@ -327,7 +327,7 @@ public:
         _LCORE_CHECK_PTR_NOTZERO(m_tptr.Get());
         return m_tptr.operator->();
     }
-    inline auto operator*() const noexcept requires (!Void<T>) {
+    inline auto& operator*() const noexcept requires (!Void<T>) {
         _LCORE_CHECK_PTR_NOTZERO(m_tptr.Get());
         return m_tptr.operator*();
     }

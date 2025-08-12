@@ -24,6 +24,9 @@ class SharedPtr;
 template <typename T>
 class WeakPtr;
 
+template <typename T>
+class EnableSharedFromThis;
+
 // Exceptions
 
 class BadWeakPtr: public Exception {
@@ -252,7 +255,23 @@ public:
     }
 };
 
+template <typename T>
+struct ExtractEnableSharedFromThis {
+    using TClean = RemoveCV<T>;
+
+    template <typename U>
+    inline static std::type_identity<U> test(EnableSharedFromThis<U>*);
+
+    inline static std::type_identity<void> test(...);
+public:
+    using type = typename decltype(test(static_cast<TClean*>(nullptr)))::type;
+    inline constexpr static bool value = !Same<type, void>;
+};
+
 }
+
+template <typename T>
+using ExtractEnableSharedFromThis = EnableIf<detail::ExtractEnableSharedFromThis<T>::value, typename detail::ExtractEnableSharedFromThis<T>::type>;
 
 /// @brief Enable the use of shared pointers from this pointer
 template <typename T>
@@ -268,12 +287,14 @@ public:
     inline EnableSharedFromThis& operator=(const EnableSharedFromThis&) = default;
     inline EnableSharedFromThis& operator=(EnableSharedFromThis&&) noexcept = default;
 
+protected:
     /// @brief Get a shared pointer to this object
     inline SharedPtr<T> SharedFromThis() {
         if (m_weakThis.Expired()) throw BadWeakPtr();
         return m_weakThis.Lock();
     }
 
+    /// @brief Get a shared pointer to this object, const version
     inline SharedPtr<const T> SharedFromThis() const {
         if (m_weakThis.Expired()) throw BadWeakPtr();
         return m_weakThis.Lock().template ConstCast<const T>();
@@ -300,41 +321,52 @@ public:
     inline constexpr SharedPtr(std::nullptr_t): m_tptr(nullptr), m_cb(nullptr) {}
 
     inline constexpr SharedPtr(RawPtr<T> ptr): m_tptr(ptr), m_cb(new detail::ControlBlock<T>(ptr)) {
-        if constexpr (DerivedFrom<T, EnableSharedFromThis<RemoveCV<T>>>)
+        if constexpr (detail::ExtractEnableSharedFromThis<T>::value){
+            using Extract = ExtractEnableSharedFromThis<T>;
             // If T is derived from EnableSharedFromThis, we need to set the weak pointer
-            ptr.template Cast<EnableSharedFromThis<T>>()->m_weakThis = WeakPtr<T>(m_tptr, m_cb);
+            ptr.template Cast<EnableSharedFromThis<Extract>>()->m_weakThis = WeakPtr<Extract>(m_tptr.template Cast<Extract>(), m_cb);
+        }
     }
     template <typename Deleter>
     inline constexpr SharedPtr(RawPtr<T> ptr, Deleter deleter): m_tptr(ptr), m_cb(new detail::ControlBlockDeleter<T, Deleter>(ptr, std::move(deleter))) {
-        if constexpr (DerivedFrom<T, EnableSharedFromThis<RemoveCV<T>>>)
-            ptr.template Cast<EnableSharedFromThis<T>>()->m_weakThis = WeakPtr<T>(m_tptr, m_cb);
+        if constexpr (detail::ExtractEnableSharedFromThis<T>::value) {
+            using Extract = ExtractEnableSharedFromThis<T>;
+            ptr.template Cast<EnableSharedFromThis<Extract>>()->m_weakThis = WeakPtr<Extract>(m_tptr.template Cast<Extract>(), m_cb);
+        }
     }
     template <typename Deleter, typename Allocator>
     inline constexpr SharedPtr(RawPtr<T> ptr, Deleter deleter, Allocator allocator)
         : m_tptr(ptr), m_cb(new detail::ControlBlockDeleterAllocator<T, Deleter, Allocator>(ptr, std::move(deleter), std::move(allocator))) {
-            if constexpr (DerivedFrom<T, EnableSharedFromThis<RemoveCV<T>>>)
-                ptr.template Cast<EnableSharedFromThis<T>>()->m_weakThis = WeakPtr<T>(m_tptr, m_cb);
+            if constexpr (detail::ExtractEnableSharedFromThis<T>::value){
+                using Extract = ExtractEnableSharedFromThis<T>;
+                ptr.template Cast<EnableSharedFromThis<Extract>>()->m_weakThis = WeakPtr<Extract>(m_tptr.template Cast<Extract>(), m_cb);
+            }
         }
     
     template <typename U>
     requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
     inline constexpr SharedPtr(RawPtr<U> ptr): m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlock<U>(m_tptr.template Cast<U>())) {
-        if constexpr (DerivedFrom<U, EnableSharedFromThis<RemoveCV<U>>>)
-            // If T is derived from EnableSharedFromThis, we need to set the weak pointer
-            ptr.template Cast<EnableSharedFromThis<U>>()->m_weakThis = WeakPtr<U>(m_tptr.template Cast<U>(), m_cb);
+        if constexpr (detail::ExtractEnableSharedFromThis<U>::value) {
+            using Extract = ExtractEnableSharedFromThis<U>;
+            ptr.template Cast<EnableSharedFromThis<Extract>>()->m_weakThis = WeakPtr<Extract>(m_tptr.template Cast<Extract>(), m_cb);
+        }
     }
     template <typename U, typename Deleter>
     requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
     inline constexpr SharedPtr(RawPtr<U> ptr, Deleter deleter): m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlockDeleter<U, Deleter>(m_tptr.template Cast<U>(), std::move(deleter))) {
-        if constexpr (DerivedFrom<U, EnableSharedFromThis<RemoveCV<U>>>)
-            ptr.template Cast<EnableSharedFromThis<U>>()->m_weakThis = WeakPtr<U>(m_tptr.template Cast<U>(), m_cb);
+        if constexpr (detail::ExtractEnableSharedFromThis<U>::value){
+            using Extract = ExtractEnableSharedFromThis<U>;
+            ptr.template Cast<EnableSharedFromThis<Extract>>()->m_weakThis = WeakPtr<Extract>(m_tptr.template Cast<Extract>(), m_cb);
+        }
     }
     template <typename U, typename Deleter, typename Allocator>
     requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
     inline constexpr SharedPtr(RawPtr<U> ptr, Deleter deleter, Allocator allocator)
         : m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlockDeleterAllocator<U, Deleter, Allocator>(m_tptr.template Cast<U>(), std::move(deleter), std::move(allocator))) {
-            if constexpr (DerivedFrom<U, EnableSharedFromThis<RemoveCV<U>>>)
-                ptr.template Cast<EnableSharedFromThis<U>>()->m_weakThis = WeakPtr<U>(m_tptr.template Cast<U>(), m_cb);
+            if constexpr (detail::ExtractEnableSharedFromThis<U>::value){
+                using Extract = ExtractEnableSharedFromThis<U>;
+                ptr.template Cast<EnableSharedFromThis<Extract>>()->m_weakThis = WeakPtr<Extract>(m_tptr.template Cast<Extract>(), m_cb);
+            }
     }
 
     template <typename U>

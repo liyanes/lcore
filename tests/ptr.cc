@@ -259,25 +259,31 @@ TEST(PointerTest, SharedFromThis) {
     struct EnableSharedFromThisTest : public EnableSharedFromThis<EnableSharedFromThisTest>, public Base {
         int value;
         EnableSharedFromThisTest(int v) : value(v) {}
+        SharedPtr<EnableSharedFromThisTest> GetThis() { return SharedFromThis(); }
+
         virtual ~EnableSharedFromThisTest() { std::cout << "EnableSharedFromThisTest destroyed with value: " << value << std::endl; }
+    };
+
+    struct EnableSharedFromThisDerived : public EnableSharedFromThisTest {
+        using EnableSharedFromThisTest::EnableSharedFromThisTest;
     };
 
     SharedPtr<EnableSharedFromThisTest> ptr(new EnableSharedFromThisTest(200));
     EXPECT_TRUE(ptr);
     EXPECT_EQ(ptr->value, 200);
 
-    SharedPtr<EnableSharedFromThisTest> sharedPtr = ptr->SharedFromThis();
+    SharedPtr<EnableSharedFromThisTest> sharedPtr = ptr->GetThis();
     EXPECT_TRUE(sharedPtr);
     EXPECT_EQ(sharedPtr->value, 200);
 
     ptr.Reset(); // Reset the original pointer
     sharedPtr.Reset(); // Reset the shared pointer
 
-    SharedPtr<Base> basePtr(new EnableSharedFromThisTest(300));
+    SharedPtr<Base> basePtr(new EnableSharedFromThisDerived(300));
     EXPECT_TRUE(basePtr);
     EXPECT_EQ(basePtr.Cast<EnableSharedFromThisTest>()->value, 300);
 
-    EXPECT_NO_THROW(basePtr.Cast<EnableSharedFromThisTest>()->SharedFromThis());
+    EXPECT_NO_THROW(basePtr.Cast<EnableSharedFromThisTest>()->GetThis());
 
     basePtr.Reset(); // Reset the base pointer
     EXPECT_FALSE(basePtr);

@@ -1,6 +1,7 @@
 #pragma once
 #include "base.hpp"
 #include "traits.hpp"
+#include "exception.hpp"
 #include <atomic>
 #include <memory>
 
@@ -22,6 +23,16 @@ class SharedPtr;
 
 template <typename T>
 class WeakPtr;
+
+// Exceptions
+
+class BadWeakPtr: public Exception {
+public:
+    using Exception::Exception; // Inherit constructors from Exception
+    inline const char* what() const noexcept override {
+        return "Bad weak pointer: The weak pointer is expired or not initialized.";
+    }
+};
 
 template <typename T, typename U>
 concept Castable = requires (T* t) {
@@ -243,6 +254,32 @@ public:
 
 }
 
+/// @brief Enable the use of shared pointers from this pointer
+template <typename T>
+class EnableSharedFromThis {
+    template <typename U>
+    friend class SharedPtr;
+private:
+    mutable WeakPtr<T> m_weakThis = nullptr;
+public:
+    inline EnableSharedFromThis() = default;
+    inline EnableSharedFromThis(const EnableSharedFromThis&) = default;
+    inline EnableSharedFromThis(EnableSharedFromThis&&) noexcept = default;
+    inline EnableSharedFromThis& operator=(const EnableSharedFromThis&) = default;
+    inline EnableSharedFromThis& operator=(EnableSharedFromThis&&) noexcept = default;
+
+    /// @brief Get a shared pointer to this object
+    inline SharedPtr<T> SharedFromThis() {
+        if (m_weakThis.Expired()) throw BadWeakPtr();
+        return m_weakThis.Lock();
+    }
+
+    inline SharedPtr<const T> SharedFromThis() const {
+        if (m_weakThis.Expired()) throw BadWeakPtr();
+        return m_weakThis.Lock().template ConstCast<const T>();
+    }
+};
+
 /// @brief Shared pointer
 /// @tparam T The type of the pointer
 template <typename T>
@@ -259,14 +296,57 @@ public:
     // Types
     using Type = T;
     // factory methods
-    inline SharedPtr() = default;
-    inline SharedPtr(std::nullptr_t): m_tptr(nullptr), m_cb(nullptr) {}
-    inline SharedPtr(RawPtr<T> ptr): m_tptr(ptr), m_cb(new detail::ControlBlock<T>(ptr)) {}
+    inline constexpr SharedPtr() = default;
+    inline constexpr SharedPtr(std::nullptr_t): m_tptr(nullptr), m_cb(nullptr) {}
+
+    inline constexpr SharedPtr(RawPtr<T> ptr): m_tptr(ptr), m_cb(new detail::ControlBlock<T>(ptr)) {
+        if constexpr (DerivedFrom<T, EnableSharedFromThis<RemoveCV<T>>>)
+            // If T is derived from EnableSharedFromThis, we need to set the weak pointer
+            ptr.template Cast<EnableSharedFromThis<T>>()->m_weakThis = WeakPtr<T>(m_tptr, m_cb);
+    }
     template <typename Deleter>
-    inline SharedPtr(RawPtr<T> ptr, Deleter deleter): m_tptr(ptr), m_cb(new detail::ControlBlockDeleter<T, Deleter>(ptr, std::move(deleter))) {}
+    inline constexpr SharedPtr(RawPtr<T> ptr, Deleter deleter): m_tptr(ptr), m_cb(new detail::ControlBlockDeleter<T, Deleter>(ptr, std::move(deleter))) {
+        if constexpr (DerivedFrom<T, EnableSharedFromThis<RemoveCV<T>>>)
+            ptr.template Cast<EnableSharedFromThis<T>>()->m_weakThis = WeakPtr<T>(m_tptr, m_cb);
+    }
     template <typename Deleter, typename Allocator>
-    inline SharedPtr(RawPtr<T> ptr, Deleter deleter, Allocator allocator)
-        : m_tptr(ptr), m_cb(new detail::ControlBlockDeleterAllocator<T, Deleter, Allocator>(ptr, std::move(deleter), std::move(allocator))) {}
+    inline constexpr SharedPtr(RawPtr<T> ptr, Deleter deleter, Allocator allocator)
+        : m_tptr(ptr), m_cb(new detail::ControlBlockDeleterAllocator<T, Deleter, Allocator>(ptr, std::move(deleter), std::move(allocator))) {
+            if constexpr (DerivedFrom<T, EnableSharedFromThis<RemoveCV<T>>>)
+                ptr.template Cast<EnableSharedFromThis<T>>()->m_weakThis = WeakPtr<T>(m_tptr, m_cb);
+        }
+    
+    template <typename U>
+    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    inline constexpr SharedPtr(RawPtr<U> ptr): m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlock<U>(m_tptr.template Cast<U>())) {
+        if constexpr (DerivedFrom<U, EnableSharedFromThis<RemoveCV<U>>>)
+            // If T is derived from EnableSharedFromThis, we need to set the weak pointer
+            ptr.template Cast<EnableSharedFromThis<U>>()->m_weakThis = WeakPtr<U>(m_tptr.template Cast<U>(), m_cb);
+    }
+    template <typename U, typename Deleter>
+    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    inline constexpr SharedPtr(RawPtr<U> ptr, Deleter deleter): m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlockDeleter<U, Deleter>(m_tptr.template Cast<U>(), std::move(deleter))) {
+        if constexpr (DerivedFrom<U, EnableSharedFromThis<RemoveCV<U>>>)
+            ptr.template Cast<EnableSharedFromThis<U>>()->m_weakThis = WeakPtr<U>(m_tptr.template Cast<U>(), m_cb);
+    }
+    template <typename U, typename Deleter, typename Allocator>
+    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    inline constexpr SharedPtr(RawPtr<U> ptr, Deleter deleter, Allocator allocator)
+        : m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlockDeleterAllocator<U, Deleter, Allocator>(m_tptr.template Cast<U>(), std::move(deleter), std::move(allocator))) {
+            if constexpr (DerivedFrom<U, EnableSharedFromThis<RemoveCV<U>>>)
+                ptr.template Cast<EnableSharedFromThis<U>>()->m_weakThis = WeakPtr<U>(m_tptr.template Cast<U>(), m_cb);
+    }
+
+    template <typename U>
+    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    inline constexpr SharedPtr(U* ptr): SharedPtr(RawPtr<U>(ptr)) {}
+    template <typename U, typename Deleter>
+    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    inline constexpr SharedPtr(U* ptr, Deleter deleter): SharedPtr(RawPtr<U>(ptr), std::move(deleter)) {}
+    template <typename U, typename Deleter, typename Allocator>
+    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    inline constexpr SharedPtr(U* ptr, Deleter deleter, Allocator allocator): SharedPtr(RawPtr<U>(ptr), std::move(deleter), std::move(allocator)) {}
+
     inline SharedPtr(const SharedPtr<T>& other) noexcept: m_tptr(other.m_tptr), m_cb(other.m_cb) {
         if (m_cb) m_cb->Ref();
     }

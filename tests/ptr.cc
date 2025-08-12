@@ -247,3 +247,43 @@ TEST(PointerTest, UniquePtrTest) {
     std::string output = ss.str();
     EXPECT_TRUE(output.find("TestClass destroyed with value: 100") != std::string::npos);
 }
+
+TEST(PointerTest, SharedFromThis) {
+    std::stringstream ss;
+    auto* originalCout = std::cout.rdbuf(ss.rdbuf()); // Redirect cout to stringstream
+
+    struct Base {
+        virtual ~Base() = default;
+    };
+
+    struct EnableSharedFromThisTest : public EnableSharedFromThis<EnableSharedFromThisTest>, public Base {
+        int value;
+        EnableSharedFromThisTest(int v) : value(v) {}
+        virtual ~EnableSharedFromThisTest() { std::cout << "EnableSharedFromThisTest destroyed with value: " << value << std::endl; }
+    };
+
+    SharedPtr<EnableSharedFromThisTest> ptr(new EnableSharedFromThisTest(200));
+    EXPECT_TRUE(ptr);
+    EXPECT_EQ(ptr->value, 200);
+
+    SharedPtr<EnableSharedFromThisTest> sharedPtr = ptr->SharedFromThis();
+    EXPECT_TRUE(sharedPtr);
+    EXPECT_EQ(sharedPtr->value, 200);
+
+    ptr.Reset(); // Reset the original pointer
+    sharedPtr.Reset(); // Reset the shared pointer
+
+    SharedPtr<Base> basePtr(new EnableSharedFromThisTest(300));
+    EXPECT_TRUE(basePtr);
+    EXPECT_EQ(basePtr.Cast<EnableSharedFromThisTest>()->value, 300);
+
+    EXPECT_NO_THROW(basePtr.Cast<EnableSharedFromThisTest>()->SharedFromThis());
+
+    basePtr.Reset(); // Reset the base pointer
+    EXPECT_FALSE(basePtr);
+
+    std::cout.rdbuf(originalCout); // Restore cout
+    std::string output = ss.str();
+    EXPECT_TRUE(output.find("EnableSharedFromThisTest destroyed with value: 200") != std::string::npos);
+    EXPECT_TRUE(output.find("EnableSharedFromThisTest destroyed with value: 300") != std::string::npos);
+};

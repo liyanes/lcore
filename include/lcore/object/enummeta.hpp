@@ -4,10 +4,10 @@
 
 LCORE_OBJ_NAMESPACE_BEGIN
 
-template <typename BaseType, typename EnumT, typename InfoDetail = std::default_sentinel_t>
+template <typename MarkType, typename EnumT, typename InfoDetail = std::default_sentinel_t>
 class EnumMeta;
 
-template <typename BaseType, typename InfoDetail = std::default_sentinel_t>
+template <typename MarkType, typename InfoDetail = std::default_sentinel_t>
 class EnumMetaBase {
     const std::type_info* m_typeInfo;
 
@@ -24,7 +24,7 @@ public:
     using Enum = EnumInfo*;
     
     template <typename T>
-    using MetaType = EnumMeta<BaseType, T, InfoDetail>;
+    using MetaType = EnumMeta<MarkType, T, InfoDetail>;
     
     template <typename T>
     static MetaType<T> NewMeta() {
@@ -68,13 +68,13 @@ public:
     }
 };
 
-template <typename BaseType, typename EnumT, typename InfoDetail>
-class EnumMeta final: public EnumMetaBase<BaseType, InfoDetail> {
+template <typename MarkType, typename EnumT, typename InfoDetail>
+class EnumMeta final: public EnumMetaBase<MarkType, InfoDetail> {
 public:
-    using EnumInfo = typename EnumMetaBase<BaseType, InfoDetail>::EnumInfo;
-    using Enum = typename EnumMetaBase<BaseType, InfoDetail>::Enum;
+    using EnumInfo = typename EnumMetaBase<MarkType, InfoDetail>::EnumInfo;
+    using Enum = typename EnumMetaBase<MarkType, InfoDetail>::Enum;
 
-    EnumMeta() : EnumMetaBase<BaseType, InfoDetail>(&typeid(EnumT)) {}
+    EnumMeta() : EnumMetaBase<MarkType, InfoDetail>(&typeid(EnumT)) {}
 
     Enum AddValue(const char* name, InfoDetail detail = InfoDetail{}) {
         EnumInfo info{name, detail};

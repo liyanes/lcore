@@ -79,7 +79,7 @@ class SystemError: public Exception {
 protected:
     int m_errno;
 public:
-    SystemError(int errno_): m_errno(errno_) {}
+    SystemError(int errno_ = errno): m_errno(errno_) {}
     inline const char* what() const noexcept override {
         return strerror(m_errno);
     }

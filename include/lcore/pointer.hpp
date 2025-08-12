@@ -23,6 +23,16 @@ class SharedPtr;
 template <typename T>
 class WeakPtr;
 
+template <typename T, typename U>
+concept Castable = requires (T* t) {
+    { static_cast<U*>(t) } -> ConvertibleTo<U*>;
+};
+
+template <typename T, typename U>
+concept ConstCastable = requires (T* t) {
+    { const_cast<U*>(t) } -> ConvertibleTo<U*>;
+};
+
 /// @brief Raw pointer
 /// @tparam T The type of the pointer
 template <typename T>
@@ -102,7 +112,7 @@ public:
     }
 
     template <typename U>
-    requires DerivedFrom<U, T> || DerivedFrom<T, U> || OneOf<void, T, U>
+    requires Castable<T, U>
     inline constexpr RawPtr<U> Cast() const noexcept {
         return static_cast<U*>(ptr);
     }
@@ -113,7 +123,7 @@ public:
     }
 
     template <typename U>
-    requires Same<RemoveCV<T>, RemoveCV<U>>
+    requires ConstCastable<T, U>
     inline constexpr RawPtr<U> ConstCast() const noexcept {
         return const_cast<U*>(ptr);
     }
@@ -124,7 +134,7 @@ public:
     }
 };
 
-namespace _detail {
+namespace detail {
 
 // Control block for SharedPtr & WeakPtr
 template <template <typename> typename AtomicType = std::atomic>
@@ -243,20 +253,20 @@ class SharedPtr {
     friend class WeakPtr;
 protected:
     RawPtr<T> m_tptr;
-    RawPtr<_detail::ControlBlockBase<>> m_cb = nullptr;
-    inline SharedPtr(RawPtr<T> tptr, RawPtr<_detail::ControlBlockBase<>> cb): m_tptr(tptr), m_cb(cb) { if (cb) m_cb->Ref(); }
+    RawPtr<detail::ControlBlockBase<>> m_cb = nullptr;
+    inline SharedPtr(RawPtr<T> tptr, RawPtr<detail::ControlBlockBase<>> cb): m_tptr(tptr), m_cb(cb) { if (cb) m_cb->Ref(); }
 public:
     // Types
     using Type = T;
     // factory methods
     inline SharedPtr() = default;
     inline SharedPtr(std::nullptr_t): m_tptr(nullptr), m_cb(nullptr) {}
-    inline SharedPtr(RawPtr<T> ptr): m_tptr(ptr), m_cb(new _detail::ControlBlock<T>(ptr)) {}
+    inline SharedPtr(RawPtr<T> ptr): m_tptr(ptr), m_cb(new detail::ControlBlock<T>(ptr)) {}
     template <typename Deleter>
-    inline SharedPtr(RawPtr<T> ptr, Deleter deleter): m_tptr(ptr), m_cb(new _detail::ControlBlockDeleter<T, Deleter>(ptr, std::move(deleter))) {}
+    inline SharedPtr(RawPtr<T> ptr, Deleter deleter): m_tptr(ptr), m_cb(new detail::ControlBlockDeleter<T, Deleter>(ptr, std::move(deleter))) {}
     template <typename Deleter, typename Allocator>
     inline SharedPtr(RawPtr<T> ptr, Deleter deleter, Allocator allocator)
-        : m_tptr(ptr), m_cb(new _detail::ControlBlockDeleterAllocator<T, Deleter, Allocator>(ptr, std::move(deleter), std::move(allocator))) {}
+        : m_tptr(ptr), m_cb(new detail::ControlBlockDeleterAllocator<T, Deleter, Allocator>(ptr, std::move(deleter), std::move(allocator))) {}
     inline SharedPtr(const SharedPtr<T>& other) noexcept: m_tptr(other.m_tptr), m_cb(other.m_cb) {
         if (m_cb) m_cb->Ref();
     }
@@ -370,7 +380,7 @@ public:
     // Cast methods
     /// @brief Static cast the pointer
     template <typename U>
-    requires DerivedFrom<U, T> || DerivedFrom<T, U> || OneOf<void, T, U>
+    requires Castable<T, U>
     inline SharedPtr<U> Cast() const noexcept {
         return SharedPtr<U>(m_tptr.template Cast<U>(), m_cb);
     }
@@ -387,7 +397,7 @@ public:
 
     /// @brief Const cast the pointer
     template <typename U>
-    requires Same<RemoveCV<T>, RemoveCV<U>>
+    requires ConstCastable<T, U>
     inline SharedPtr<U> ConstCast() const noexcept {
         return SharedPtr<U>(m_tptr.template ConstCast<U>(), m_cb);
     }
@@ -408,8 +418,8 @@ class WeakPtr {
     friend class SharedPtr;
 protected:
     RawPtr<T> m_tptr;
-    RawPtr<_detail::ControlBlockBase<>> m_cb = nullptr;
-    inline WeakPtr(RawPtr<T> tptr, RawPtr<_detail::ControlBlockBase<>> cb): m_tptr(tptr), m_cb(cb) {
+    RawPtr<detail::ControlBlockBase<>> m_cb = nullptr;
+    inline WeakPtr(RawPtr<T> tptr, RawPtr<detail::ControlBlockBase<>> cb): m_tptr(tptr), m_cb(cb) {
         if (m_cb) m_cb->WeakRef();
     }
 public:

@@ -94,7 +94,10 @@ public:
     //     static_assert(!Void<T>, "Cannot dereference a void pointer");
     // }
 
+    // Bool conversion
     inline constexpr operator bool() const noexcept {return ptr != nullptr;}
+
+    // Pointer comparison
     inline constexpr auto operator<=>(const RawPtr<T>& other) const noexcept {
         return ptr <=> other.ptr;
     }
@@ -108,6 +111,31 @@ public:
     inline constexpr auto operator==(const U* other) const noexcept { return ptr == other; }
     template <typename U>
     inline constexpr auto operator!=(const U* other) const noexcept { return ptr != other; }
+
+    // Pointer Offset
+    inline constexpr RawPtr<T> operator+(ptrdiff_t offset) const noexcept {
+        return RawPtr<T>(ptr + offset);
+    }
+    inline constexpr RawPtr<T> operator-(ptrdiff_t offset) const noexcept {
+        return RawPtr<T>(ptr - offset);
+    }
+    inline constexpr ptrdiff_t operator-(const RawPtr<T>& other) const noexcept {
+        return ptr - other.ptr;
+    }
+
+    // Pointer arithmetic
+    inline constexpr RawPtr<T>& operator+=(ptrdiff_t offset) noexcept {
+        ptr += offset;
+        return *this;
+    }
+    inline constexpr RawPtr<T>& operator-=(ptrdiff_t offset) noexcept {
+        ptr -= offset;
+        return *this;
+    }
+    inline constexpr RawPtr<T> operator[](ptrdiff_t offset) const noexcept {
+        _LCORE_CHECK_PTR_NOTZERO(ptr);
+        return RawPtr<T>(ptr + offset);
+    }
 
     inline constexpr bool IsConst() const noexcept {return std::is_const_v<T>;}
     inline constexpr T* Get() const noexcept {return ptr;}
@@ -265,7 +293,7 @@ struct ExtractEnableSharedFromThis {
     inline static std::type_identity<void> test(...);
 public:
     using type = typename decltype(test(static_cast<TClean*>(nullptr)))::type;
-    inline constexpr static bool value = !Same<type, void>;
+    inline constexpr static bool value = !Same<type, void> && DerivedFrom<T, type>;
 };
 
 }
@@ -288,6 +316,14 @@ public:
     inline EnableSharedFromThis& operator=(EnableSharedFromThis&&) noexcept = default;
 
 protected:
+    inline bool IsThisExpired() const noexcept {
+        return m_weakThis.Expired();
+    }
+
+    inline auto GetThisWeakCount() const noexcept {
+        return m_weakThis.UseCount();
+    }
+
     /// @brief Get a shared pointer to this object
     inline SharedPtr<T> SharedFromThis() {
         if (m_weakThis.Expired()) throw BadWeakPtr();
@@ -458,7 +494,9 @@ public:
     inline int operator<=>(const SharedPtr<T>& other) const noexcept {
         return m_tptr <=> other.m_tptr;
     }
-
+    inline bool operator==(std::nullptr_t) const noexcept { return m_tptr == nullptr; }
+    inline bool operator!=(std::nullptr_t) const noexcept { return m_tptr != nullptr; }
+    
     // Interface methods
 
     inline constexpr bool IsConst() const noexcept { return std::is_const_v<T>; }

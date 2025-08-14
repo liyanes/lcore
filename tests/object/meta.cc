@@ -27,7 +27,7 @@ MyStruct::Meta MyStruct::thisMeta = MyStruct::Meta::NewMeta<MyStruct::DataStruct
 static auto _ = []() {
     return &MyStruct::thisMeta.AddKey<int>("a", offsetof(MyStruct::DataStruct, a))
         .AddKey<float>("b", offsetof(MyStruct::DataStruct, b))
-        .AddKey<unsigned char>("c", offsetof(MyStruct::DataStruct, c));
+        .AddKey("c", &MyStruct::DataStruct::c);
 }();
 
 struct MyComplexStruct: BaseType {

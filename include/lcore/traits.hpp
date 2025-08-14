@@ -171,6 +171,7 @@ using NthType = std::tuple_element_t<index, std::tuple<Args...>>;
 template <size_t index, typename Tuple>
 using NthTypeOfTuple = std::tuple_element_t<index, Tuple>;
 
+namespace detail {
 
 template <typename T, typename ...Args>
 struct _IndexOf;
@@ -181,11 +182,13 @@ struct _IndexOf<T, T, Args...>: std::integral_constant<size_t, 0> {};
 template <typename T, typename U, typename ...Args>
 struct _IndexOf<T, U, Args...>: std::integral_constant<size_t, 1 + _IndexOf<T, Args...>::value> {};
 
+};
+
 /// @brief Get the index of a type in a type list
 /// @tparam T The type to be found
 /// @tparam Args The type list
 template <typename T, typename ...Args>
-inline constexpr size_t IndexOf = _IndexOf<T, Args...>::value;
+inline constexpr size_t IndexOf = detail::_IndexOf<T, Args...>::value;
 
 template <typename T, typename U>
 concept Comparable = requires(T t, U u){
@@ -233,6 +236,8 @@ template <typename T>
 concept Destructible = std::is_destructible_v<T>;
 
 // RemoveNthOfTuple
+
+namespace detail {
 template <size_t index, typename Tuple>
 struct _RemoveNthOfTuple;
 
@@ -245,13 +250,14 @@ template <typename First, typename ...Args>
 struct _RemoveNthOfTuple<0, std::tuple<First, Args...>>{
     using type = std::tuple<Args...>;
 };
+}
 
 template <size_t index, typename Tuple>
-using RemoveNthOfTuple = typename _RemoveNthOfTuple<index, Tuple>::type;
+using RemoveNthOfTuple = typename detail::_RemoveNthOfTuple<index, Tuple>::type;
 
 /// ======== Function parameters ========
 // Get the nth parameter type of a callable object
-
+namespace detail {
 template <size_t index, typename CallableObject>
 struct _NthParameterType;
 
@@ -291,14 +297,17 @@ template <size_t index, typename CallableObject>
 struct _NthParameterType{
     using type = typename _NthParameterType<index, decltype(&CallableObject::operator())>::type;
 };
+}
 
 template <size_t index, typename CallableObject>
-using NthParameterType = typename _NthParameterType<index, CallableObject>::type;
+using NthParameterType = typename detail::_NthParameterType<index, CallableObject>::type;
 
 template <typename CallableObject>
 using FirstParameterType = NthParameterType<0, CallableObject>;
 
 // Count the number of parameters of a callable object
+
+namespace detail {
 template <typename CallableObject>
 struct _ParameterCount;
 
@@ -321,11 +330,14 @@ template <typename CallableObject>
 struct _ParameterCount{
     using type = typename _ParameterCount<decltype(&CallableObject::operator())>::type;
 };
+}
 
 template <typename CallableObject>
-inline constexpr size_t ParameterCount = _ParameterCount<CallableObject>::type::value;
+inline constexpr size_t ParameterCount = detail::_ParameterCount<CallableObject>::type::value;
 
 // Tuple of parameter types
+
+namespace detail {
 template <typename CallableObject>
 struct _ParameterTuple;
 
@@ -358,13 +370,30 @@ template <typename CallableObject>
 struct _ParameterTuple{
     using type = typename _ParameterTuple<decltype(&CallableObject::operator())>::type;
 };
+}
 
 template <typename CallableObject>
-using ParameterTuple = typename _ParameterTuple<CallableObject>::type;
+using ParameterTuple = typename detail::_ParameterTuple<CallableObject>::type;
 
 template <typename CallableObject>
 using DeclReturnType = decltype(std::apply(std::declval<CallableObject>(), std::declval<ParameterTuple<CallableObject>>()));
 
 /// ====================================
+
+namespace detail {
+
+template <typename T>
+struct _ExtractMemberType;
+
+template <typename T, typename U>
+struct _ExtractMemberType<T U::*> {
+    using type = T;
+};
+
+}
+
+template <typename T>
+using ExtractMemberType = typename detail::_ExtractMemberType<T>::type;
+
 
 LCORE_NAMESPACE_END

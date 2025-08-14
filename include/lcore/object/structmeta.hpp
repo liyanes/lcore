@@ -107,6 +107,14 @@ public:
         return *this;
     }
 
+    template <typename MemberType>
+    requires std::is_member_object_pointer_v<MemberType>
+    StructMeta& AddKey(NameType name, MemberType member) {
+        using MemberT = std::remove_cvref_t<ExtractMemberType<MemberType>>;
+        static_assert(std::is_copy_constructible_v<MemberT>, "Member type must be copy constructible");
+        return AddKey<MemberT>(name, reinterpret_cast<uintptr_t>(&(static_cast<T*>(nullptr)->*member)));
+    }
+
     template <typename StructType>
     requires std::is_class_v<StructType> && std::is_copy_constructible_v<StructType>
     StructMeta& AddStructKey(NameType name, size_t offset) {

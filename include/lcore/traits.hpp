@@ -74,6 +74,12 @@ using ResultCallableOfTuple = decltype(std::apply(std::declval<Func>(), std::dec
 template <typename T>
 concept Const = std::is_const_v<T>;
 
+template <typename T>
+concept Volatile = std::is_volatile_v<T>;
+
+template <typename T>
+concept IsClass = std::is_class_v<T>;
+
 /**
  * Iterator Traits, see also in std::ranges::iterator_traits
 */
@@ -255,128 +261,109 @@ struct _RemoveNthOfTuple<0, std::tuple<First, Args...>>{
 template <size_t index, typename Tuple>
 using RemoveNthOfTuple = typename detail::_RemoveNthOfTuple<index, Tuple>::type;
 
-/// ======== Function parameters ========
-// Get the nth parameter type of a callable object
-namespace detail {
-template <size_t index, typename CallableObject>
-struct _NthParameterType;
+/// ========== Function traits =========
 
-
-// For function type
-template <size_t index, typename Ret, typename ...Args>
-struct _NthParameterType<index, Ret(Args...)>{
-    using type = NthType<index, Args...>;
-};
-
-// For function pointer type
-template <size_t index, typename Ret, typename ...Args>
-struct _NthParameterType<index, Ret(*)(Args...)>{
-    using type = NthType<index, Args...>;
-};
-
-// For function reference type
-template <size_t index, typename Ret, typename ...Args>
-struct _NthParameterType<index, Ret(&)(Args...)>{
-    using type = NthType<index, Args...>;
-};
-
-// For member function type
-template <size_t index, typename Class, typename Ret, typename ...Args>
-struct _NthParameterType<index, Ret(Class::*)(Args...)>{
-    using type = NthType<index, Args...>;
-};
-
-// For member const function type
-template <size_t index, typename Class, typename Ret, typename ...Args>
-struct _NthParameterType<index, Ret(Class::*)(Args...) const>{
-    using type = NthType<index, Args...>;
-};
-
-// For lambda type
-template <size_t index, typename CallableObject>
-struct _NthParameterType{
-    using type = typename _NthParameterType<index, decltype(&CallableObject::operator())>::type;
-};
-}
-
-template <size_t index, typename CallableObject>
-using NthParameterType = typename detail::_NthParameterType<index, CallableObject>::type;
-
-template <typename CallableObject>
-using FirstParameterType = NthParameterType<0, CallableObject>;
-
-// Count the number of parameters of a callable object
-
-namespace detail {
-template <typename CallableObject>
-struct _ParameterCount;
+template <typename T>
+struct FunctionTraits;
 
 template <typename Ret, typename ...Args>
-struct _ParameterCount<Ret(Args...)>: std::integral_constant<size_t, sizeof...(Args)> {};
+struct FunctionTraits<Ret(Args...)> {
+    using ReturnType = Ret;
+    using ArgsTuple = std::tuple<Args...>;
+    using ArgsDecayTuple = std::tuple<std::decay_t<Args>...>;
+    template <size_t index>
+    using NthParameterType = NthType<index, Args...>;
 
-template <typename Ret, typename ...Args>
-struct _ParameterCount<Ret(*)(Args...)>: std::integral_constant<size_t, sizeof...(Args)> {};
-
-template <typename Ret, typename ...Args>
-struct _ParameterCount<Ret(&)(Args...)>: std::integral_constant<size_t, sizeof...(Args)> {};
-
-template <typename Class, typename Ret, typename ...Args>
-struct _ParameterCount<Ret(Class::*)(Args...)>: std::integral_constant<size_t, sizeof...(Args)> {};
-
-template <typename Class, typename Ret, typename ...Args>
-struct _ParameterCount<Ret(Class::*)(Args...) const>: std::integral_constant<size_t, sizeof...(Args)> {};
-
-template <typename CallableObject>
-struct _ParameterCount{
-    using type = typename _ParameterCount<decltype(&CallableObject::operator())>::type;
-};
-}
-
-template <typename CallableObject>
-inline constexpr size_t ParameterCount = detail::_ParameterCount<CallableObject>::type::value;
-
-// Tuple of parameter types
-
-namespace detail {
-template <typename CallableObject>
-struct _ParameterTuple;
-
-template <typename Ret, typename ...Args>
-struct _ParameterTuple<Ret(Args...)>{
-    using type = std::tuple<Args...>;
+    static constexpr size_t Arity = sizeof...(Args);
+    static constexpr bool IsCallable = true;
+    static constexpr bool IsFunction = true;
+    static constexpr bool IsMemberFunction = false;
+    static constexpr bool IsFunctionPointer = false;
+    static constexpr bool IsFunctionReference = false;
+    static constexpr bool IsMemberFunctionPointer = false;
+    static constexpr bool IsCallableObject = false;
 };
 
 template <typename Ret, typename ...Args>
-struct _ParameterTuple<Ret(*)(Args...)>{
-    using type = std::tuple<Args...>;
+struct FunctionTraits<Ret(*)(Args...)> {
+    using ReturnType = Ret;
+    using ArgsTuple = std::tuple<Args...>;
+    using ArgsDecayTuple = std::tuple<std::decay_t<Args>...>;
+    template <size_t index>
+    using NthParameterType = NthType<index, Args...>;
+
+    static constexpr size_t Arity = sizeof...(Args);
+    static constexpr bool IsCallable = true;
+    static constexpr bool IsFunction = false;
+    static constexpr bool IsMemberFunction = false;
+    static constexpr bool IsFunctionPointer = true;
+    static constexpr bool IsFunctionReference = false;
+    static constexpr bool IsMemberFunctionPointer = false;
+    static constexpr bool IsCallableObject = false;
 };
 
 template <typename Ret, typename ...Args>
-struct _ParameterTuple<Ret(&)(Args...)>{
-    using type = std::tuple<Args...>;
+struct FunctionTraits<Ret(&)(Args...)> {
+    using ReturnType = Ret;
+    using ArgsTuple = std::tuple<Args...>;
+    using ArgsDecayTuple = std::tuple<std::decay_t<Args>...>;
+    template <size_t index>
+    using NthParameterType = NthType<index, Args...>;
+
+    static constexpr size_t Arity = sizeof...(Args);
+    static constexpr bool IsCallable = true;
+    static constexpr bool IsFunction = false;
+    static constexpr bool IsMemberFunction = false;
+    static constexpr bool IsFunctionPointer = false;
+    static constexpr bool IsFunctionReference = false;
+    static constexpr bool IsMemberFunctionPointer = false;
+    static constexpr bool IsCallableObject = true;
 };
 
 template <typename Class, typename Ret, typename ...Args>
-struct _ParameterTuple<Ret(Class::*)(Args...)>{
-    using type = std::tuple<Args...>;
+struct FunctionTraits<Ret(Class::*)(Args...)> {
+    using ReturnType = Ret;
+    using ArgsTuple = std::tuple<Args...>;
+    using ArgsDecayTuple = std::tuple<std::decay_t<Args>...>;
+    template <size_t index>
+    using NthParameterType = NthType<index, Args...>;
+    using ClassType = Class;
+
+    static constexpr size_t Arity = sizeof...(Args);
+    static constexpr bool IsCallable = true;
+    static constexpr bool IsFunction = false;
+    static constexpr bool IsMemberFunction = true;
+    static constexpr bool IsFunctionPointer = false;
+    static constexpr bool IsFunctionReference = false;
+    static constexpr bool IsMemberFunctionPointer = true;
+    static constexpr bool IsCallableObject = false;
+
+    static constexpr bool IsConst = false;
 };
 
 template <typename Class, typename Ret, typename ...Args>
-struct _ParameterTuple<Ret(Class::*)(Args...) const>{
-    using type = std::tuple<Args...>;
+struct FunctionTraits<Ret(Class::*)(Args...) const> {
+    using ReturnType = Ret;
+    using ArgsTuple = std::tuple<Args...>;
+    using ArgsDecayTuple = std::tuple<std::decay_t<Args>...>;
+    template <size_t index>
+    using NthParameterType = NthType<index, Args...>;
+    using ClassType = Class;
+
+    static constexpr size_t Arity = sizeof...(Args);
+    static constexpr bool IsCallable = true;
+    static constexpr bool IsFunction = false;
+    static constexpr bool IsMemberFunction = true;
+    static constexpr bool IsFunctionPointer = false;
+    static constexpr bool IsFunctionReference = false;
+    static constexpr bool IsMemberFunctionPointer = true;
+    static constexpr bool IsCallableObject = false;
+
+    static constexpr bool IsConst = true;
 };
 
-template <typename CallableObject>
-struct _ParameterTuple{
-    using type = typename _ParameterTuple<decltype(&CallableObject::operator())>::type;
-};
-}
-
-template <typename CallableObject>
-using ParameterTuple = typename detail::_ParameterTuple<CallableObject>::type;
-
-template <typename CallableObject>
-using DeclReturnType = decltype(std::apply(std::declval<CallableObject>(), std::declval<ParameterTuple<CallableObject>>()));
+template <typename T>
+struct FunctionTraits: FunctionTraits<decltype(&T::operator())> {};
 
 /// ====================================
 

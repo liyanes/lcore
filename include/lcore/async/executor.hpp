@@ -34,14 +34,19 @@ public:
     void Run(){
         started = true;
         while (started && !tasks.empty()){
+            bool allsuspend = true;
             for (auto iter = tasks.begin(); iter != tasks.end();){
                 auto &task = *iter;
                 if (task.done()){
+                    allsuspend = false;
                     iter = tasks.erase(iter);
                 }else{
                     task.resume();
                     iter++;
                 }
+            }
+            if (allsuspend){
+                std::this_thread::yield();
             }
         }
     }

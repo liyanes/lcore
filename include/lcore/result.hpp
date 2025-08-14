@@ -86,42 +86,50 @@ public:
 
     constexpr bool IsOk() const { return isOk; }
     constexpr bool IsError() const { return !isOk; }
-    constexpr T& Value() {
+    constexpr ValueType& Value() {
         if (!isOk) throw RuntimeError("Attempted to access value of an error Result");
         return value;
     }
-    constexpr const T& Value() const {
+    constexpr const ValueType& Value() const {
         if (!isOk) throw RuntimeError("Attempted to access value of an error Result");
         return value;
     }
-    constexpr E& Error() {
+    constexpr ErrorValueType& Error() {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error.Value();
     }
-    constexpr const E& Error() const {
+    constexpr const ErrorValueType& Error() const {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error.Value();
+    }
+    constexpr ErrorType& AsError() {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return error;
+    }
+    constexpr const ErrorType& AsError() const {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return error;
     }
 
     constexpr explicit operator bool() const { return isOk; }
-    constexpr T* operator->() {
+    constexpr ValueType* operator->() {
         if (!isOk) throw RuntimeError("Attempted to access value of an error Result");
         return &value;
     }
-    constexpr const T* operator->() const {
+    constexpr const ValueType* operator->() const {
         if (!isOk) throw RuntimeError("Attempted to access value of an error Result");
         return &value;
     }
-    constexpr T& operator*() {
+    constexpr ValueType& operator*() {
         if (!isOk) throw RuntimeError("Attempted to dereference an error Result");
         return *value;
     }
-    constexpr const T& operator*() const {
+    constexpr const ValueType& operator*() const {
         if (!isOk) throw RuntimeError("Attempted to dereference an error Result");
         return *value;
     }
 
-    T ValueOr(const T& defaultValue) const {
+    ValueType ValueOr(const ValueType& defaultValue) const {
         return isOk ? value : defaultValue;
     }
 

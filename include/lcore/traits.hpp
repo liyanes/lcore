@@ -7,6 +7,9 @@
 LCORE_NAMESPACE_BEGIN
 
 template <typename T>
+using Forward = T;
+
+template <typename T>
 concept Number = std::is_arithmetic_v<T>;
 
 template <typename T>

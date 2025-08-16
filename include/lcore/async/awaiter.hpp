@@ -2,6 +2,7 @@
 #include "base.hpp"
 #include "lcore/traits.hpp"
 #include <optional>
+#include <coroutine>
 
 LCORE_ASYNC_NAMESPACE_BEGIN
 

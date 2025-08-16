@@ -715,6 +715,12 @@ public:
     inline UniquePtr(UniquePtr<T, Deleter>&& other) noexcept: ptr(other.ptr), deleter(std::move(other.deleter)) {
         other.ptr = nullptr;
     }
+    template <typename U, typename D>
+    requires (DerivedFrom<U, T> || Same<T, void>)
+    inline UniquePtr(UniquePtr<U, D>&& other) noexcept: ptr(other.ptr.template Cast<T>()), deleter(std::move(other.deleter)) {
+        other.ptr = nullptr;
+    }
+
     inline ~UniquePtr() { Reset(); }
 
     // operators
@@ -726,6 +732,15 @@ public:
             deleter = std::move(other.deleter);
             other.ptr = nullptr;
         }
+        return *this;
+    }
+    template <typename U, typename D>
+    requires (DerivedFrom<U, T> || Same<T, void>)
+    inline UniquePtr<T, Deleter>& operator=(UniquePtr<U, D>&& other) noexcept {
+        Reset();
+        ptr = other.ptr.template Cast<T>();
+        deleter = std::move(other.deleter);
+        other.ptr = nullptr;
         return *this;
     }
 

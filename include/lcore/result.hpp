@@ -18,6 +18,14 @@ public:
     constexpr Error(T&& value): m_value(std::move(value)) {}
     constexpr Error(const T& value): m_value(value) {}
 
+    template <typename U>
+    requires ConvertibleTo<U, T>
+    constexpr Error(const Error<U>& other) : m_value(other.Value()) {}
+
+    template <typename U>
+    requires ConvertibleTo<U, T>
+    constexpr Error(Error<U>&& other) : m_value(std::move(other.Value())) {}
+
     constexpr const T& Value() const { return m_value; }
     constexpr T& Value() { return m_value; }
 
@@ -46,8 +54,19 @@ public:
     constexpr Result(): value(), isOk(true) {}
     constexpr Result(ValueType&& v): value(std::move(v)), isOk(true) {}
     constexpr Result(const ValueType& v): value(v), isOk(true) {}
+    template <typename... Args>
+    requires ConstructibleWith<ValueType, Args...>
+    constexpr Result(Args&&... args): isOk(true) {
+        ::new (value) ValueType(std::forward<Args>(args)...);
+    }
     constexpr Result(ErrorType&& e): error(std::move(e)), isOk(false) {}
     constexpr Result(const ErrorType& e): error(e), isOk(false) {}
+    template <typename U>
+    requires ConvertibleTo<U, ErrorValueType>
+    constexpr Result(const Error<U>& e): error(e.Value()), isOk(false) {}
+    template <typename U>
+    requires ConvertibleTo<U, ErrorValueType>
+    constexpr Result(Error<U>&& e): error(std::move(e.Value())), isOk(false) {}
 
     constexpr ~Result() {
         if (isOk) value.~ValueType();

@@ -54,6 +54,14 @@ public:
         this->value = value;
     }
 
+    void set_value(T&& value){
+        this->value = std::move(value);
+    }
+    
+    void set_value(const T& value){
+        this->value = value;
+    }
+
     std::optional<T> value;
 };
 
@@ -97,7 +105,11 @@ public:
 
     // static_assert(IsPromise<PromiseType>, "PromiseType must be a valid promise type");
 private:
-    std::coroutine_handle<promise_type> handle;
+    std::coroutine_handle<> handle;
+
+    constexpr std::coroutine_handle<promise_type> get_handle() const {
+        return std::coroutine_handle<promise_type>::from_address(handle.address());
+    }
 public:
     Task(): handle(nullptr){
     }
@@ -121,23 +133,24 @@ public:
     }
 
     bool await_ready(){
-        return this->handle.promise().value.has_value() || this->handle.done();
+        return get_handle().promise().value.has_value() || this->handle.done();
     }
 
-    void await_suspend(std::coroutine_handle<promise_type> handle){
+    template <typename OtherPromiseType>
+    void await_suspend(std::coroutine_handle<OtherPromiseType> handle){
         this->handle = handle;
     }
 
     T await_resume(){
-        return this->handle.promise().value.value();
+        return get_handle().promise().value.value();
     }
 
     bool has_value(){
-        return handle.promise().value.has_value();
+        return get_handle().promise().value.has_value();
     }
 
     T get(){
-        return handle.promise().value.value();
+        return get_handle().promise().value.value();
     }
 
     void resume(){
@@ -157,7 +170,11 @@ public:
 
     // static_assert(IsPromise<PromiseType>, "PromiseType must be a valid promise type");
 private:
-    std::coroutine_handle<promise_type> handle;
+    std::coroutine_handle<> handle;
+
+    constexpr std::coroutine_handle<promise_type> get_handle() const {
+        return std::coroutine_handle<promise_type>::from_address(handle.address());
+    }
 public:
     Task(): handle(nullptr){
     }

@@ -7,6 +7,9 @@
 LCORE_NAMESPACE_BEGIN
 
 template <typename T>
+using Forward = T;
+
+template <typename T>
 concept Number = std::is_arithmetic_v<T>;
 
 template <typename T>
@@ -164,7 +167,7 @@ template <typename T, typename U>
 concept CanConvTo = std::is_convertible_v<T, U>;
 
 template <typename T, typename U>
-concept ConvertibleTo = std::is_convertible_v<T, U>;
+concept ConvertibleTo = std::convertible_to<T, U>;
 
 #define GetMemberType(ParentType, MemberName) (decltype(std::declval<ParentType>.##MemberName))
 
@@ -218,9 +221,9 @@ using EnableIf = std::enable_if_t<Cond, T>;
 template <bool Cond, typename T, typename F>
 using Conditional = std::conditional_t<Cond, T, F>;
 
-template <typename T, typename Args>
-concept ConstructibleWith = requires(T t, Args args){
-    {T(args)} -> Same<T>;
+template <typename T, typename ...Args>
+concept ConstructibleWith = requires(T t, Args... args){
+    {T(args...)} -> Same<T>;
 };
 
 template <typename T>

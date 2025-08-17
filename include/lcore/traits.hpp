@@ -367,6 +367,26 @@ struct FunctionTraits: FunctionTraits<decltype(&T::operator())> {};
 
 /// ====================================
 
+// /// ======== Character Traits ========
+
+// template <typename T>
+// class CharTraits;
+
+// template <>
+// class CharTraits<char> {
+// public:
+//     using CharType = char;
+//     static constexpr size_t size = sizeof(CharType);
+
+//     using PosType = std::streampos;
+//     using OffType = std::streamoff;
+//     using IntType = int;
+
+    
+// };
+
+// /// ====================================
+
 namespace detail {
 
 template <typename T>

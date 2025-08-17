@@ -182,13 +182,8 @@ namespace detail {
 template <template <typename> typename AtomicType = std::atomic>
 class ControlBlockBase {
 public:
-    void* ptr;    // ptr will not updated until the control block is destroyed, we don't need to use atomic for it
     AtomicType<size_t> shared_count = 1; // Start with 1 for the initial shared_ptr
     AtomicType<size_t> weak_count = 0;
-
-    ControlBlockBase(void* p): ptr(p) {}
-    template <typename T>
-    ControlBlockBase(RawPtr<T> p): ptr(p.Get()) {}
 
     /// @brief Destroy the object (Do not deallocate the memory!!!)
     virtual void Destory() = 0;
@@ -230,11 +225,12 @@ template <typename T, template <typename> typename AtomicType = std::atomic>
 class ControlBlock : public ControlBlockBase<AtomicType> {
 public:
     using Pointer = RawPtr<T>;
+    Pointer ptr;
     
-    ControlBlock(Pointer p): ControlBlockBase<AtomicType>(p) {};
+    ControlBlock(Pointer p): ptr(p) {};
     
     void Destory() override {
-        delete static_cast<T*>(this->ptr);
+        delete this->ptr.template Cast<T>().Get(); // Destroy the object pointed to by ptr
     }
 
     void Deallocate() override {
@@ -243,16 +239,17 @@ public:
 };
 
 template <typename T, typename Deleter, template <typename> typename AtomicType = std::atomic>
+requires InvokeAble<Deleter, T*>
 class ControlBlockDeleter : public ControlBlockBase<AtomicType> {
 public:
     using Pointer = RawPtr<T>;
-    
+    Pointer ptr;
     Deleter deleter;
 
-    ControlBlockDeleter(Pointer p, Deleter d): ControlBlockBase<AtomicType>(p), deleter(std::move(d)) {};
+    ControlBlockDeleter(Pointer p, Deleter d): ptr(p), deleter(std::move(d)) {};
 
     void Destory() override {
-        deleter(static_cast<T*>(this->ptr));
+        deleter(this->ptr.template Cast<T>().Get());
     }
 
     void Deallocate() override {
@@ -264,22 +261,20 @@ template <typename T, typename Deleter, typename Allocator, template <typename> 
 class ControlBlockDeleterAllocator : public ControlBlockBase<AtomicType> {
 public:
     using Pointer = RawPtr<T>;
-
+    Pointer ptr;
     Deleter deleter;
     Allocator allocator;
 
     ControlBlockDeleterAllocator(Pointer p, Deleter d, Allocator a):
-        ControlBlockBase<AtomicType>(p), deleter(std::move(d)), allocator(std::move(a)) {};
+        ptr(p), deleter(std::move(d)), allocator(std::move(a)) {};
 
     void Destory() override {
         deleter(this->ptr);
     }
 
     void Deallocate() override {
-        // using AllocTraits = std::allocator_traits<Allocator>;
-        auto alloc = allocator;
-        Allocator::destroy(alloc, this);
-        Allocator::deallocate(alloc, this, 1);
+        allocator.destroy(this);
+        allocator.deallocate(this, 1);
     }
 };
 
@@ -345,6 +340,8 @@ class SharedPtr {
     friend class SharedPtr;
     template <typename U>
     friend class WeakPtr;
+    template <typename U, typename... Args>
+    friend SharedPtr<U> MakePtr(Args&&... args);
 protected:
     RawPtr<T> m_tptr;
     RawPtr<detail::ControlBlockBase<>> m_cb = nullptr;
@@ -364,6 +361,7 @@ public:
         }
     }
     template <typename Deleter>
+    requires InvokeAble<Deleter, T*>
     inline constexpr SharedPtr(RawPtr<T> ptr, Deleter deleter): m_tptr(ptr), m_cb(new detail::ControlBlockDeleter<T, Deleter>(ptr, std::move(deleter))) {
         if constexpr (detail::ExtractEnableSharedFromThis<T>::value) {
             using Extract = ExtractEnableSharedFromThis<T>;
@@ -371,6 +369,7 @@ public:
         }
     }
     template <typename Deleter, typename Allocator>
+    requires InvokeAble<Deleter, T*>
     inline constexpr SharedPtr(RawPtr<T> ptr, Deleter deleter, Allocator allocator)
         : m_tptr(ptr), m_cb(new detail::ControlBlockDeleterAllocator<T, Deleter, Allocator>(ptr, std::move(deleter), std::move(allocator))) {
             if constexpr (detail::ExtractEnableSharedFromThis<T>::value){
@@ -685,7 +684,31 @@ using Ptr = SharedPtr<T>;
 
 template <typename T, typename... Args>
 inline SharedPtr<T> MakePtr(Args&&... args) {
-    return SharedPtr<T>(new T(std::forward<Args>(args)...));
+    // return SharedPtr<T>(new T(std::forward<Args>(args)...));
+    struct CbWithT: public detail::ControlBlockBase<> {
+        char mem[sizeof(T)];
+        
+        CbWithT(Args&&... args) {
+            new (mem) T(std::forward<Args>(args)...); // Placement new to construct T in the memory
+            this->shared_count = 0; // Start with 0 for the initial shared_ptr
+        }
+
+        void Destory() override {
+            T* obj = reinterpret_cast<T*>(mem);
+            obj->~T(); // Call the destructor of T
+        }
+        void Deallocate() override {
+            delete this; // Deallocate the control block itself
+        }
+    };
+    auto mem = new char[sizeof(CbWithT)];
+    try {
+        auto cb = new (mem) CbWithT{std::forward<Args>(args)...};
+        return SharedPtr<T>(RawPtr<T>(reinterpret_cast<T*>(cb->mem)), cb);
+    } catch (...) {
+        delete[] mem; // Clean up memory in case of exception
+        throw;
+    }
 };
 
 template <typename T, typename... Args>

@@ -252,6 +252,18 @@ public:
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error.Value();
     }
+    constexpr ErrorType& AsError() & {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return error;
+    }
+    constexpr ErrorType AsError() && {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return std::move(error);
+    }
+    constexpr const ErrorType& AsError() const & {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return error;
+    }
 
     constexpr explicit operator bool() const { return isOk; }
 
@@ -295,3 +307,9 @@ public:
 };
 
 LCORE_NAMESPACE_END
+
+#ifdef __GNUC__ || __clang__
+#define L_TRY(expr) ({ auto _result = (expr); if (!_result.IsOk()) return std::move(_result).AsError(); _result.Value(); })
+#else 
+#error "L_TRY is only supported on GCC and Clang."
+#endif

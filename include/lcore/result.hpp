@@ -310,6 +310,6 @@ LCORE_NAMESPACE_END
 
 #ifdef __GNUC__ || __clang__
 #define L_TRY(expr) ({ auto _result = (expr); if (!_result.IsOk()) return std::move(_result).AsError(); _result.Value(); })
-#else 
-#error "L_TRY is only supported on GCC and Clang."
+#else
+#define L_TRY(expr) do { static_assert(false, "L_TRY is only supported on GCC and Clang"); } while(0)
 #endif

@@ -42,27 +42,77 @@ public:
         return TaskType<T>(handle_type::from_promise(*this));
     }
 
-    void unhandled_exception(){
-        throw;
+    struct final_awaiter {
+        bool await_ready() const noexcept { return false; }
+        void await_suspend(std::coroutine_handle<promise_type> h) noexcept {
+            auto& p = h.promise();
+            if (p.continuation) p.continuation.resume();
+        }
+        void await_resume() noexcept {}
+    };
+    auto final_suspend() noexcept { return final_awaiter{}; }
+
+    void unhandled_exception() noexcept {
+        this->exception = std::current_exception();
     }
 
-    void return_value(T&& value){
+    void return_value(T&& value) {
         this->value = std::move(value);
     }
 
-    void return_value(const T& value){
+    void return_value(const T& value) {
         this->value = value;
     }
 
-    void set_value(T&& value){
+    void set_value(T&& value) requires MoveConstructible<T> {
         this->value = std::move(value);
+        this->exception = nullptr;
     }
     
-    void set_value(const T& value){
+    void set_value(const T& value) requires CopyConstructible<T> {
         this->value = value;
+        this->exception = nullptr;
     }
 
+    void set_exception(std::exception_ptr exception) noexcept {
+        this->exception = exception;
+        this->value.reset();
+    }
+
+    const T& ref_value_or_exception() const & {
+        if(this->exception) std::rethrow_exception(this->exception);
+        return this->value.value();
+    }
+
+    T peek_value_or_exception() const requires CopyConstructible<T> {
+        if(this->exception) std::rethrow_exception(this->exception);
+        return this->value.value();
+    }
+
+    T consume_value_or_exception() && requires MoveConstructible<T> {
+        if(this->exception) std::rethrow_exception(this->exception);
+        return std::move(this->value.value());
+    }
+
+    bool has_value() const {
+        return this->value.has_value();
+    }
+
+    bool has_exception() const {
+        return this->exception != nullptr;
+    }
+
+    const std::optional<T>& get_value_opt() const {
+        return this->value;
+    }
+    const std::exception_ptr& get_exception() const {
+        return this->exception;
+    }
+
+    std::coroutine_handle<> continuation{};
+private:
     std::optional<T> value;
+    std::exception_ptr exception;
 };
 
 template <typename SuspendHandleType>
@@ -80,12 +130,42 @@ public:
         return TaskType<void>(handle_type::from_promise(*this));
     }
 
-    void unhandled_exception(){
-        throw;
+    struct final_awaiter {
+        bool await_ready() const noexcept { return false; }
+        void await_suspend(std::coroutine_handle<promise_type> h) noexcept {
+            auto& p = h.promise();
+            if (p.continuation) p.continuation.resume();
+        }
+        void await_resume() noexcept {}
+    };
+    auto final_suspend() noexcept { return final_awaiter{}; }
+
+    void unhandled_exception() noexcept {
+        this->exception = std::current_exception();
     }
 
     void return_void(){
     }
+
+    void set_exception(std::exception_ptr exception) noexcept {
+        this->exception = exception;
+    }
+
+    void get_value_or_exception() {
+        if(this->exception) std::rethrow_exception(this->exception);
+    }
+
+    bool has_exception() const {
+        return this->exception != nullptr;
+    }
+
+    const std::exception_ptr& get_exception() const {
+        return this->exception;
+    }
+
+    std::coroutine_handle<> continuation{};
+private:
+    std::exception_ptr exception;
 };
 
 /// @brief Awaitable base interface, used in co_await
@@ -105,61 +185,59 @@ public:
 
     // static_assert(IsPromise<PromiseType>, "PromiseType must be a valid promise type");
 private:
-    std::coroutine_handle<> handle;
-
-    constexpr std::coroutine_handle<promise_type> get_handle() const {
-        return std::coroutine_handle<promise_type>::from_address(handle.address());
-    }
+    std::coroutine_handle<promise_type> handle;
 public:
-    Task(): handle(nullptr){
+    Task(): handle(nullptr) {
     }
-    Task(std::coroutine_handle<promise_type> handle): handle(handle){
+    Task(std::coroutine_handle<promise_type> handle): handle(handle) {
     }
 
     Task(const Task&) = delete;
-    Task(Task&& other): handle(other.handle){
+    Task(Task&& other): handle(other.handle) {
         other.handle = nullptr;
     }
 
     Task& operator=(const Task&) = delete;
-    Task& operator=(Task&& other){
-        handle = other.handle;
-        other.handle = nullptr;
+    Task& operator=(Task&& other) noexcept {
+        if (this != &other) {
+            if(handle) handle.destroy();
+            handle = other.handle;
+            other.handle = nullptr;
+        }
         return *this;
     }
 
-    ~Task(){
+    ~Task() {
         if(handle) handle.destroy();
     }
 
-    bool await_ready(){
-        return get_handle().promise().value.has_value() || this->handle.done();
+    auto operator co_await() && noexcept {
+        struct awaiter {
+            std::coroutine_handle<promise_type> handle;
+            bool await_ready() const noexcept {
+                return !handle || handle.done();
+            }
+            std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaiting) noexcept {
+                handle.promise().continuation = awaiting;
+                return handle;
+            }
+            T await_resume() {
+                return std::move(handle.promise()).consume_value_or_exception();
+            }
+        };
+        return awaiter{handle};
     }
 
-    template <typename OtherPromiseType>
-    void await_suspend(std::coroutine_handle<OtherPromiseType> handle){
-        this->handle = handle;
+    const T& ref_value() const & {
+        return handle.promise().ref_value_or_exception();
     }
-
-    T await_resume(){
-        return get_handle().promise().value.value();
+    T consume_value() && requires MoveConstructible<T> {
+        return handle.promise().consume_value_or_exception();
     }
-
-    bool has_value(){
-        return get_handle().promise().value.has_value();
-    }
-
-    T get(){
-        return get_handle().promise().value.value();
-    }
-
-    void resume(){
-        handle.resume();
-    }
-
-    bool done(){
-        return handle.done();
-    }
+    bool done() const noexcept { return !handle || handle.done(); }
+    bool is_exception() { return handle.promise().has_exception(); }
+    std::exception_ptr get_exception() { return handle.promise().get_exception(); }
+    void resume() { if(handle) handle.resume(); }
 };
 
 template <typename SuspendHandlerType, typename PromiseType>
@@ -170,51 +248,56 @@ public:
 
     // static_assert(IsPromise<PromiseType>, "PromiseType must be a valid promise type");
 private:
-    std::coroutine_handle<> handle;
-
-    constexpr std::coroutine_handle<promise_type> get_handle() const {
-        return std::coroutine_handle<promise_type>::from_address(handle.address());
-    }
+    std::coroutine_handle<promise_type> handle;
 public:
     Task(): handle(nullptr){
     }
-    Task(std::coroutine_handle<promise_type> handle): handle(handle){
+    Task(std::coroutine_handle<promise_type> handle): handle(handle) {
     }
 
     Task(const Task&) = delete;
-    Task(Task&& other): handle(other.handle){
+    Task(Task&& other): handle(other.handle) {
         other.handle = nullptr;
     }
 
     Task& operator=(const Task&) = delete;
-    Task& operator=(Task&& other){
-        handle = other.handle;
-        other.handle = nullptr;
+    Task& operator=(Task&& other) {
+        if (this != &other) {
+            if(handle) handle.destroy();
+            handle = other.handle;
+            other.handle = nullptr;
+        }
         return *this;
     }
 
-    ~Task(){
+    ~Task() {
         if(handle) handle.destroy();
     }
 
-    bool await_ready(){
-        return handle.done();
+    auto operator co_await() && noexcept {
+        struct awaiter {
+            std::coroutine_handle<promise_type> handle;
+            bool await_ready() const noexcept {
+                return !handle || handle.done();
+            }
+            std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaiting) noexcept {
+                handle.promise().continuation = awaiting;
+                return handle;
+            }
+            void await_resume() {
+                handle.promise().get_value_or_exception();
+            }
+        };
+        return awaiter{handle};
     }
 
-    void await_suspend(std::coroutine_handle<promise_type> handle){
-        this->handle = handle;
+    void consume_value() {
+        handle.promise().get_value_or_exception();
     }
-
-    void await_resume(){
-    }
-
-    void resume(){
-        handle.resume();
-    }
-
-    bool done(){
-        return handle.done();
-    }
+    bool done() const noexcept { return !handle || handle.done(); }
+    bool is_exception() { return handle.promise().has_exception(); }
+    std::exception_ptr get_exception() { return handle.promise().get_exception(); }
+    void resume() { if(handle) handle.resume(); }
 };
 
 LCORE_ASYNC_NAMESPACE_END

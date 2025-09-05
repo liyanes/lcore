@@ -8,6 +8,11 @@
 
 using namespace LCORE_NAMESPACE_NAME::async;
 
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+
 Generator<int> yiledtest(){
     co_yield 1;
     co_yield 2;
@@ -67,8 +72,8 @@ Task<int> tasktest(){
 TEST(AsyncTest, TaskTest) {
     auto task = tasktest();
     while (!task.done()) task.resume();
-    ASSERT_TRUE(task.has_value());
-    EXPECT_EQ(task.get(), 1);
+    ASSERT_TRUE(task.done());
+    EXPECT_EQ(task.ref_value(), 1);
 }
 
 Task<int> taskawaittest(){
@@ -79,8 +84,8 @@ Task<int> taskawaittest(){
 TEST(AsyncTest, TaskAwaitTest) {
     auto task = taskawaittest();
     while (!task.done()) task.resume();
-    ASSERT_TRUE(task.has_value());
-    EXPECT_EQ(task.get(), 2);
+    ASSERT_TRUE(task.done());
+    EXPECT_EQ(task.ref_value(), 2);
 }
 
 AsyncGenerator<int> agen(){
@@ -94,7 +99,7 @@ TEST(AsyncTest, AsyncGeneratorTest) {
     std::vector<int> results;
     for (auto i : agen()) {
         while (!i.done()) i.resume();
-        auto value = i.get();
+        auto value = i.ref_value();
         // In async generator, we need to manually check if the generator will yield a value
         if (!value.has_value()) break; // Check if the generator will yield a value, if not, break the loop
         results.push_back(value.value());
@@ -107,7 +112,7 @@ TEST(AsyncTest, AsyncGeneratorTest) {
 
 Task<void> voidtext(){
     co_await std::suspend_always();
-    std::cout << "Void test" << std::endl;
+    // std::cout << "Void test" << std::endl;
 }
 
 TEST(AsyncTest, VoidTest) {
@@ -116,7 +121,14 @@ TEST(AsyncTest, VoidTest) {
     // No assertion here, just checking if it runs without crashing
 }
 
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+TEST(AsyncTest, MoveOnlyTypeTest) {
+    auto task = []() -> Task<std::unique_ptr<int>> {
+        co_await std::suspend_always();
+        co_return std::make_unique<int>(42);
+    }();
+    while (!task.done()) task.resume();
+    ASSERT_TRUE(task.done());
+    auto& value = task.ref_value();
+    ASSERT_TRUE(value != nullptr);
+    EXPECT_EQ(*value, 42);
 }

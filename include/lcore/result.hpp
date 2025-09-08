@@ -26,8 +26,9 @@ public:
     requires ConvertibleTo<U, T>
     constexpr Error(Error<U>&& other) : m_value(std::move(other.Value())) {}
 
-    constexpr const T& Value() const { return m_value; }
-    constexpr T& Value() { return m_value; }
+    constexpr const T& Value() const & { return m_value; }
+    constexpr T& Value() & { return m_value; }
+    constexpr T Value() && { return std::move(m_value); }
 
     constexpr explicit operator bool() const { return true; }
     constexpr const T* operator->() const { return &m_value; }
@@ -57,7 +58,7 @@ public:
     template <typename... Args>
     requires ConstructibleWith<ValueType, Args...>
     constexpr Result(Args&&... args): isOk(true) {
-        ::new (value) ValueType(std::forward<Args>(args)...);
+        ::new (&value) ValueType(std::forward<Args>(args)...);
     }
     constexpr Result(ErrorType&& e): error(std::move(e)), isOk(false) {}
     constexpr Result(const ErrorType& e): error(e), isOk(false) {}
@@ -105,29 +106,43 @@ public:
 
     constexpr bool IsOk() const { return isOk; }
     constexpr bool IsError() const { return !isOk; }
-    constexpr ValueType& Value() {
+    constexpr ValueType& Value() & {
         if (!isOk) throw RuntimeError("Attempted to access value of an error Result");
         return value;
     }
-    constexpr const ValueType& Value() const {
+    constexpr const ValueType& Value() const & {
         if (!isOk) throw RuntimeError("Attempted to access value of an error Result");
         return value;
     }
-    constexpr ErrorValueType& Error() {
+    constexpr ValueType Value() && {
+        if (!isOk) throw RuntimeError("Attempted to access value of an error Result");
+        return std::move(value);
+    }
+
+    constexpr ErrorValueType& Error() & {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error.Value();
     }
-    constexpr const ErrorValueType& Error() const {
+    constexpr const ErrorValueType& Error() const & {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error.Value();
     }
-    constexpr ErrorType& AsError() {
+    constexpr ErrorValueType Error() && {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return std::move(error).Value();
+    }
+
+    constexpr ErrorType& AsError() & {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error;
     }
-    constexpr const ErrorType& AsError() const {
+    constexpr const ErrorType& AsError() const & {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error;
+    }
+    constexpr ErrorType AsError() && {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return std::move(error);
     }
 
     constexpr explicit operator bool() const { return isOk; }
@@ -244,25 +259,30 @@ public:
     constexpr void Value() const {
         if (!isOk) throw RuntimeError("Attempted to access value of an error Result");
     }
-    constexpr E& Error() {
+    constexpr E& Error() & {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error.Value();
     }
-    constexpr const E& Error() const {
+    constexpr const E& Error() const & {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error.Value();
     }
+    constexpr E Error() && {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return std::move(error).Value();
+    }
+
     constexpr ErrorType& AsError() & {
+        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
+        return error;
+    }
+    constexpr const ErrorType& AsError() const & {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return error;
     }
     constexpr ErrorType AsError() && {
         if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
         return std::move(error);
-    }
-    constexpr const ErrorType& AsError() const & {
-        if (isOk) throw RuntimeError("Attempted to access error of a successful Result");
-        return error;
     }
 
     constexpr explicit operator bool() const { return isOk; }
@@ -308,8 +328,14 @@ public:
 
 LCORE_NAMESPACE_END
 
-#ifdef __GNUC__ || __clang__
+#if defined(__GNUC__) || defined(__clang__)
 #define L_TRY(expr) ({ auto _result = (expr); if (!_result.IsOk()) return std::move(_result).AsError(); _result.Value(); })
+#define L_TRY_VOID(expr) ({ auto _result = (expr); if (!_result.IsOk()) return std::move(_result).AsError(); })
 #else
 #define L_TRY(expr) do { static_assert(false, "L_TRY is only supported on GCC and Clang"); } while(0)
+#define L_TRY_VOID(expr) do { static_assert(false, "L_TRY_VOID is only supported on GCC and Clang"); } while(0)
 #endif
+
+#define L_TRY_SET(var, expr) do { auto _result = (expr); if (!_result.IsOk()) return std::move(_result).AsError(); var = std::move(_result).Value(); } while(0)
+#define L_TRY_DEF(var, expr) auto var##_ = (expr); if (!var##_.IsOk()) return std::move(var##_).AsError(); auto var = std::move(var##_).Value();
+#define L_TRY_DO(expr) do { auto _result = (expr); if (!_result.IsOk()) return std::move(_result).AsError(); } while(0)

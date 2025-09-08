@@ -66,19 +66,14 @@ public:
     inline constexpr RawPtr(const RawPtr<T>& ptr): ptr(ptr.ptr) {}
     inline constexpr RawPtr(RawPtr<T>&& ptr): ptr(ptr.ptr) {ptr.ptr = nullptr;}
     template <typename U>
-    requires (DerivedFrom<U, T> || Same<T, void>)
+    requires (DerivedFrom<U, T> || Void<T>)
     inline constexpr RawPtr(const RawPtr<U>& ptr): ptr(ptr.ptr) {}
 
     inline constexpr RawPtr<T>& operator=(const RawPtr<T>& ptr) noexcept {this->ptr = ptr.ptr; return *this;}
     inline constexpr RawPtr<T>& operator=(RawPtr<T>&& ptr) noexcept {this->ptr = ptr.ptr; ptr.ptr = nullptr; return *this;}
     template <typename U>
-    requires (DerivedFrom<U, T> || Same<T, void>)
+    requires (DerivedFrom<U, T> || Void<T>)
     inline constexpr RawPtr<T>& operator=(const RawPtr<U>& ptr) noexcept { this->ptr = ptr.ptr; return *this; }
-    
-    // inline constexpr RawPtr<T>& operator=(T* ptr) noexcept {this->ptr = ptr; return *this;}
-    // template <typename U>
-    // requires (DerivedFrom<U, T> || Same<T, void>)
-    // inline constexpr RawPtr<T>& operator=(U* ptr) noexcept { this->ptr = static_cast<T*>(ptr); return *this; }
     
     inline constexpr RawPtr<T>& operator=(std::nullptr_t) noexcept {this->ptr = nullptr; return *this;}
     
@@ -379,7 +374,7 @@ public:
         }
     
     template <typename U>
-    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    requires ((DerivedFrom<U, T> || Void<T>) && !Same<U, T>)
     inline constexpr SharedPtr(RawPtr<U> ptr): m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlock<U>(m_tptr.template Cast<U>())) {
         if constexpr (detail::ExtractEnableSharedFromThis<U>::value) {
             using Extract = ExtractEnableSharedFromThis<U>;
@@ -387,7 +382,7 @@ public:
         }
     }
     template <typename U, typename Deleter>
-    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    requires ((DerivedFrom<U, T> || Void<T>) && !Same<U, T>)
     inline constexpr SharedPtr(RawPtr<U> ptr, Deleter deleter): m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlockDeleter<U, Deleter>(m_tptr.template Cast<U>(), std::move(deleter))) {
         if constexpr (detail::ExtractEnableSharedFromThis<U>::value){
             using Extract = ExtractEnableSharedFromThis<U>;
@@ -395,7 +390,7 @@ public:
         }
     }
     template <typename U, typename Deleter, typename Allocator>
-    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    requires ((DerivedFrom<U, T> || Void<T>) && !Same<U, T>)
     inline constexpr SharedPtr(RawPtr<U> ptr, Deleter deleter, Allocator allocator)
         : m_tptr(ptr.template Cast<T>()), m_cb(new detail::ControlBlockDeleterAllocator<U, Deleter, Allocator>(m_tptr.template Cast<U>(), std::move(deleter), std::move(allocator))) {
             if constexpr (detail::ExtractEnableSharedFromThis<U>::value){
@@ -405,13 +400,13 @@ public:
     }
 
     template <typename U>
-    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    requires ((DerivedFrom<U, T> || Void<T>) && !Same<U, T>)
     inline constexpr SharedPtr(U* ptr): SharedPtr(RawPtr<U>(ptr)) {}
     template <typename U, typename Deleter>
-    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    requires ((DerivedFrom<U, T> || Void<T>) && !Same<U, T>)
     inline constexpr SharedPtr(U* ptr, Deleter deleter): SharedPtr(RawPtr<U>(ptr), std::move(deleter)) {}
     template <typename U, typename Deleter, typename Allocator>
-    requires ((DerivedFrom<U, T> || Same<T, void>) && !Same<U, T>)
+    requires ((DerivedFrom<U, T> || Void<T>) && !Same<U, T>)
     inline constexpr SharedPtr(U* ptr, Deleter deleter, Allocator allocator): SharedPtr(RawPtr<U>(ptr), std::move(deleter), std::move(allocator)) {}
 
     inline SharedPtr(const SharedPtr<T>& other) noexcept: m_tptr(other.m_tptr), m_cb(other.m_cb) {
@@ -422,12 +417,12 @@ public:
         other.m_cb = nullptr;
     }
     template <typename U>
-    requires DerivedFrom<U, T> || Same<T, void>
+    requires DerivedFrom<U, T> || Void<T>
     inline SharedPtr(const SharedPtr<U>& other) noexcept: m_tptr(other.m_tptr.template Cast<T>()), m_cb(other.m_cb) {
         if (m_cb) m_cb->Ref();
     }
     template <typename U>
-    requires DerivedFrom<U, T> || Same<T, void>
+    requires DerivedFrom<U, T> || Void<T>
     inline SharedPtr(SharedPtr<U>&& other) noexcept: m_tptr(other.m_tptr.template Cast<T>()), m_cb(other.m_cb) {
         other.m_tptr = nullptr;
         other.m_cb = nullptr;
@@ -461,7 +456,7 @@ public:
         return *this;
     }
     template <typename U>
-    requires (DerivedFrom<U, T> && !Same<U, T>) || Same<T, void>
+    requires (DerivedFrom<U, T> && !Same<U, T>) || Void<T>
     inline SharedPtr<T>& operator=(const SharedPtr<U>& other) noexcept {
         if (m_cb) m_cb->Unref();
         m_tptr = other.m_tptr.template Cast<T>();
@@ -470,7 +465,7 @@ public:
         return *this;
     }
     template <typename U>
-    requires (DerivedFrom<U, T> && !Same<U, T>) || Same<T, void>
+    requires (DerivedFrom<U, T> && !Same<U, T>) || Void<T>
     inline SharedPtr<T>& operator=(SharedPtr<U>&& other) noexcept {
         if (m_cb) m_cb->Unref();
         m_tptr = other.m_tptr.template Cast<T>();
@@ -492,6 +487,18 @@ public:
     inline operator bool() const noexcept { return m_tptr != nullptr; }
     inline int operator<=>(const SharedPtr<T>& other) const noexcept {
         return m_tptr <=> other.m_tptr;
+    }
+    inline bool operator<(const SharedPtr<T>& other) const noexcept {
+        return m_tptr < other.m_tptr;
+    }
+    inline bool operator<=(const SharedPtr<T>& other) const noexcept {
+        return m_tptr <= other.m_tptr;
+    }
+    inline bool operator>(const SharedPtr<T>& other) const noexcept {
+        return m_tptr > other.m_tptr;
+    }
+    inline bool operator>=(const SharedPtr<T>& other) const noexcept {
+        return m_tptr >= other.m_tptr;
     }
     inline bool operator==(std::nullptr_t) const noexcept { return m_tptr == nullptr; }
     inline bool operator!=(std::nullptr_t) const noexcept { return m_tptr != nullptr; }
@@ -593,13 +600,13 @@ public:
         if (m_cb) m_cb->WeakRef();
     }
     template <typename U>
-    requires DerivedFrom<U, T> || Same<T, void>
+    requires DerivedFrom<U, T> || Void<T>
     inline WeakPtr(WeakPtr<U>&& other) noexcept: m_tptr(other.m_tptr.template Cast<T>()), m_cb(other.m_cb) {
         other.m_tptr = nullptr;
         other.m_cb = nullptr;
     }
     template <typename U>
-    requires DerivedFrom<U, T> || Same<T, void>
+    requires DerivedFrom<U, T> || Void<T>
     inline WeakPtr(const SharedPtr<U>& other) noexcept: m_tptr(other.m_tptr.template Cast<T>()), m_cb(other.m_cb) {
         if (m_cb) m_cb->WeakRef();
     }
@@ -631,7 +638,7 @@ public:
         return *this;
     }
     template <typename U>
-    requires (DerivedFrom<U, T> && !Same<U, T>) || Same<T, void>
+    requires (DerivedFrom<U, T> && !Same<U, T>) || Void<T>
     inline WeakPtr<T>& operator=(const WeakPtr<U>& other) noexcept {
         if (m_cb) m_cb->WeakUnref();
         m_tptr = other.m_tptr.template Cast<T>();
@@ -640,7 +647,7 @@ public:
         return *this;
     }
     template <typename U>
-    requires (DerivedFrom<U, T> && !Same<U, T>) || Same<T, void>
+    requires (DerivedFrom<U, T> && !Same<U, T>) || Void<T>
     inline WeakPtr<T>& operator=(WeakPtr<U>&& other) noexcept {
         if (m_cb) m_cb->WeakUnref();
         m_tptr = other.m_tptr.template Cast<T>();
@@ -650,7 +657,7 @@ public:
         return *this;
     }
     template <typename U>
-    requires DerivedFrom<U, T>  || Same<T, void>
+    requires DerivedFrom<U, T>  || Void<T>
     inline WeakPtr<T>& operator=(const SharedPtr<U>& other) noexcept {
         if (m_cb) m_cb->WeakUnref();
         m_tptr = other.m_tptr.template Cast<T>();
@@ -739,7 +746,7 @@ public:
         other.ptr = nullptr;
     }
     template <typename U, typename D>
-    requires (DerivedFrom<U, T> || Same<T, void>)
+    requires (DerivedFrom<U, T> || Void<T>)
     inline UniquePtr(UniquePtr<U, D>&& other) noexcept: ptr(other.ptr.template Cast<T>()), deleter(std::move(other.deleter)) {
         other.ptr = nullptr;
     }
@@ -758,7 +765,7 @@ public:
         return *this;
     }
     template <typename U, typename D>
-    requires (DerivedFrom<U, T> || Same<T, void>)
+    requires (DerivedFrom<U, T> || Void<T>)
     inline UniquePtr<T, Deleter>& operator=(UniquePtr<U, D>&& other) noexcept {
         Reset();
         ptr = other.ptr.template Cast<T>();

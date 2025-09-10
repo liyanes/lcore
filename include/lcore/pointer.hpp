@@ -825,3 +825,26 @@ inline constexpr UniquePtr<T> MakeUniquePtr(Args&&... args) {
 };
 
 LCORE_NAMESPACE_END
+
+
+// Hash specialization for RawPtr, SharedPtr and UniquePtr
+namespace std {
+template <typename T>
+struct hash<LCORE_NAMESPACE_NAME::RawPtr<T>> {
+    inline size_t operator()(const LCORE_NAMESPACE_NAME::RawPtr<T>& ptr) const noexcept {
+        return hash<T*>()(ptr.Get());
+    }
+};
+template <typename T>
+struct hash<LCORE_NAMESPACE_NAME::SharedPtr<T>> {
+    inline size_t operator()(const LCORE_NAMESPACE_NAME::SharedPtr<T>& ptr) const noexcept {
+        return hash<T*>()(ptr.Get().Get());
+    }
+};
+template <typename T, typename Deleter>
+struct hash<LCORE_NAMESPACE_NAME::UniquePtr<T, Deleter>> {
+    inline size_t operator()(const LCORE_NAMESPACE_NAME::UniquePtr<T, Deleter>& ptr) const noexcept {
+        return hash<T*>()(ptr.Get().Get());
+    }
+};
+}

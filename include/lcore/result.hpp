@@ -204,6 +204,11 @@ public:
         if (isOk) return ResultType(value);
         else return ResultType(func(error.Value()));
     }
+
+    inline T ValueOrThrow() const && {
+        if (isOk) return std::move(value);
+        else throw std::move(error).Value();
+    }
 };
 
 template <typename E>

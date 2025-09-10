@@ -4,6 +4,7 @@
 #include <map>
 #include <functional>
 #include <initializer_list>
+#include <stdexcept>
 
 LCORE_NAMESPACE_BEGIN
 

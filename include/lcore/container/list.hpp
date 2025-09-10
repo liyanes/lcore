@@ -2,6 +2,7 @@
 #include "lcore/base.hpp"
 #include "lcore/traits.hpp"
 #include <list>
+#include <algorithm>
 
 LCORE_NAMESPACE_BEGIN
 

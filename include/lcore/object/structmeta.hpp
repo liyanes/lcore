@@ -38,11 +38,16 @@ public:
     };
 protected:
     Vector<StructKeyInfo> m_keys;
+    void* (*CopyConstruct)(void* dest, const void* src) = nullptr;
+    void (*Destruct)(void* obj) = nullptr;
     
     static void Register(StructMetaBase* meta) { 
         GetAllStructMetas().push_back(meta); 
     }
     StructMetaBase(const std::type_info* typeInfo, size_t size) : m_typeInfo(typeInfo), m_size(size) { Register(this); }
+
+    void SetCopyConstruct(void* (*func)(void* dest, const void* src)) { this->CopyConstruct = func; }
+    void SetDestruct(void (*func)(void* obj)) { this->Destruct = func; }
 public:
     StructMetaBase(const StructMetaBase&) = delete;
     StructMetaBase& operator=(const StructMetaBase&) = delete;
@@ -80,6 +85,17 @@ public:
         return std::find_if(m_keys.begin(), m_keys.end(),
             [&key](const StructKeyInfo& info) { return info.name == key; });
     }
+    void* CopyConstructObj(void* dest, const void* src) const {
+        if (this->CopyConstruct) {
+            return this->CopyConstruct(dest, src);
+        }
+        return nullptr;
+    }
+    void DestructObj(void* obj) const {
+        if (this->Destruct) {
+            this->Destruct(obj);
+        }
+    }
 
     template <typename T>
     using MetaType = StructMeta<MarkType, T, NameType>;
@@ -98,7 +114,14 @@ class StructMeta final: public StructMetaBase<MarkType, NameType> {
 
     using StructType = T;
 public:
-    StructMeta() : StructMetaBase<MarkType, NameType>(&typeid(T), sizeof(T)) {}
+    StructMeta() : StructMetaBase<MarkType, NameType>(&typeid(T), sizeof(T)) {
+        this->SetCopyConstruct([](void* dest, const void* src) -> void* {
+            dest = new T(*reinterpret_cast<const T*>(src));
+        });
+        this->SetDestruct([](void* obj) {
+            delete reinterpret_cast<T*>(obj);
+        });
+    }
 
     template <typename KeyType>
     requires std::is_copy_constructible_v<KeyType>

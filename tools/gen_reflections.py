@@ -4,8 +4,8 @@
 # This script scans the header files for classes and functions
 # and generates reflection metadata for [[reflect]] annotated items.
 
-# Command: this.py <input_header...> / <input_folder> -o <output_file>
-# Example: this.py include/lcore/ -o include/lcore/reflection/generated.hpp
+# Command: this.py <input_header...> / <input_folder> -o <output_file> -I <include_path...>
+# Example: this.py include/lcore/ -o include/lcore/reflection/generated.hpp -I include/ -I /usr/include/ ...
 
 try:
     import clang.cindex as cindex
@@ -30,18 +30,14 @@ class Parser:
         tu = self.index.parse(input, args=['-x', 'c++', '-std=c++20'] + [f'-I{path}' for path in self.include_paths])
         
         def _handle_tree(node: cindex.Cursor):
-            if node.kind == cindex.CursorKind.CLASS_DECL and node.is_definition():
-                if any(attr.spelling == 'reflect' for attr in node.get_attributes()):
-                    self.classes.append(node)
-            elif node.kind == cindex.CursorKind.FUNCTION_DECL:
-                if any(attr.spelling == 'reflect' for attr in node.get_attributes()):
-                    self.functions.append(node)
-            elif node.kind == cindex.CursorKind.ENUM_DECL and node.is_definition():
-                if any(attr.spelling == 'reflect' for attr in node.get_attributes()):
-                    self.enums.append(node)
-            
-            for child in node.get_children():
-                _handle_tree(child)
+            for walk in node.walk_preorder():
+                # if walk.kind == cindex.CursorKind.CLASS_DECL and walk.is_definition():
+                #     self.classes.append(walk)
+                # elif walk.kind == cindex.CursorKind.FUNCTION_DECL and walk.is_definition():
+                #     self.functions.append(walk)
+                # elif walk.kind == cindex.CursorKind.ENUM_DECL and walk.is_definition():
+                #     self.enums.append(walk)
+                print(walk.kind, walk.spelling, walk.kind.is_attribute())
                 
         _handle_tree(tu.cursor)
         
@@ -106,14 +102,14 @@ class Parser:
                     params = ', '.join([param.type.spelling for param in smethod.get_arguments()])
                     f.write(f'            ReflectedStaticMethod(TypeInfo::Get<{ret_type}({params})>(), "{smethod.spelling}", &{namespace_name}::{class_name}::{smethod.spelling}),\n')
                 f.write('        },\n')
-                f.write('        {\n')
-                # Static Operators
-                static_operators = [c for c in cls.get_children() if c.kind == cindex.CursorKind.CXX_METHOD and c.is_static_method() and c.is_operator()]
-                for soperator in static_operators:
-                    ret_type = soperator.result_type.spelling
-                    params = ', '.join([param.type.spelling for param in soperator.get_arguments()])
-                    f.write(f'            ReflectedStaticOperator(TypeInfo::Get<{ret_type}({params})>(), "{soperator.spelling}", &{namespace_name}::{class_name}::{soperator.spelling}),\n')
-                f.write('        }\n')
+                # f.write('        {\n')
+                # # Static Operators
+                # static_operators = [c for c in cls.get_children() if c.kind == cindex.CursorKind.CXX_METHOD and c.is_static_method() and c.is_operator()]
+                # for soperator in static_operators:
+                #     ret_type = soperator.result_type.spelling
+                #     params = ', '.join([param.type.spelling for param in soperator.get_arguments()])
+                #     f.write(f'            ReflectedStaticOperator(TypeInfo::Get<{ret_type}({params})>(), "{soperator.spelling}", &{namespace_name}::{class_name}::{soperator.spelling}),\n')
+                # f.write('        }\n')
                 f.write('    ) {}\n')
                 f.write('};\n\n')
 
@@ -121,6 +117,13 @@ if __name__ == '__main__':
     args = argparse.ArgumentParser(description="Generate reflection metadata for LCore library.")
     args.add_argument('input', nargs='+', help="Input header files or folders to scan.")
     args.add_argument('-o', '--output', required=True, help="Output file for generated reflection metadata.")
+    # args.add_argument('-l', '--language', help="Language file for parsing rules. --- IGNORE ---")
+    args.add_argument('-I', '--include', action='append', help="Additional include paths.")
     parsed_args = args.parse_args()
     
+    include_paths = parsed_args.include if parsed_args.include else []
+    parser = Parser(include_paths)
+    for input in parsed_args.input:
+        parser.parse(input)
+    parser.generate(parsed_args.output)
     

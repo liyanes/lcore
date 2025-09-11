@@ -275,34 +275,34 @@ public:
     }
 };
 
-class ReflectedStaticOperator {
-public:
-    OperatorType op_type;
-    TypeInfoPtr return_type;
-    Span<const TypeInfoPtr> param_types;
-    void (*invoker)(void** args, void* out_return);
+// class ReflectedStaticOperator {
+// public:
+//     OperatorType op_type;
+//     TypeInfoPtr return_type;
+//     Span<const TypeInfoPtr> param_types;
+//     void (*invoker)(void** args, void* out_return);
 
-    template <typename Ret, typename... Args>
-    static ReflectedStaticOperator Create(
-        OperatorType op_type,
-        Ret(*method)(Args...)
-    ) {
-        ReflectedStaticOperator result;
-        result.op_type = op_type;
-        result.return_type = &typeid(Ret);
-        static TypeInfoPtr param_types_array[] = { &typeid(Args)... };
-        result.param_types = Span<const TypeInfoPtr>(param_types_array, param_types_array + sizeof...(Args));
-        result.invoker = [](void** args, void* out_return) {
-            if constexpr (std::is_void_v<Ret>) {
-                (*method)(*static_cast<Args*>(args[0])...);
-            } else {
-                Ret* out = static_cast<Ret*>(out_return);
-                *out = (*method)(*static_cast<Args*>(args[0])...);
-            }
-        };
-        return result;
-    }
-};
+//     template <typename Ret, typename... Args>
+//     static ReflectedStaticOperator Create(
+//         OperatorType op_type,
+//         Ret(*method)(Args...)
+//     ) {
+//         ReflectedStaticOperator result;
+//         result.op_type = op_type;
+//         result.return_type = &typeid(Ret);
+//         static TypeInfoPtr param_types_array[] = { &typeid(Args)... };
+//         result.param_types = Span<const TypeInfoPtr>(param_types_array, param_types_array + sizeof...(Args));
+//         result.invoker = [](void** args, void* out_return) {
+//             if constexpr (std::is_void_v<Ret>) {
+//                 (*method)(*static_cast<Args*>(args[0])...);
+//             } else {
+//                 Ret* out = static_cast<Ret*>(out_return);
+//                 *out = (*method)(*static_cast<Args*>(args[0])...);
+//             }
+//         };
+//         return result;
+//     }
+// };
 
 class ClassReflection: public ReflectionBase {
 public:
@@ -315,7 +315,7 @@ public:
     Span<const ReflectedOperator> operators;
     Span<const ReflectedStaticField> static_fields;
     Span<const ReflectedStaticMethod> static_methods;
-    Span<const ReflectedStaticOperator> static_operators;
+    // Span<const ReflectedStaticOperator> static_operators;
 
     TypeInfoRef GetReflectionType() const override {
         return typeid(ClassReflection);

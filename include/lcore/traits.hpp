@@ -83,6 +83,9 @@ concept Volatile = std::is_volatile_v<T>;
 template <typename T>
 concept IsClass = std::is_class_v<T>;
 
+template <typename T>
+concept IsUnion = std::is_union_v<T>;
+
 /**
  * Iterator Traits, see also in std::ranges::iterator_traits
 */
@@ -153,7 +156,7 @@ concept SimpleType = !std::is_class_v<T> && !std::is_pointer_v<T> && !std::is_re
 /// @brief Enum type
 /// @tparam T The type to be checked
 template <typename T>
-concept Enum = std::is_enum_v<T>;
+concept IsEnum = std::is_enum_v<T>;
 
 /// @brief Underlying type of an enum
 /// @tparam T The enum type

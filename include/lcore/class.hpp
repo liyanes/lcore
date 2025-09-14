@@ -1,5 +1,5 @@
 #pragma once
-#include "base.hpp"
+#include "config.h"
 
 LCORE_NAMESPACE_BEGIN
 

@@ -17,3 +17,18 @@
 // #define LCORE_NAMESPACE_BEGIN namespace lcore {
 // #define LCORE_NAMESPACE_END }
 #include "config.h"
+
+#include "traits.hpp"
+#include "rawptr.hpp"
+#include "class.hpp"
+
+LCORE_NAMESPACE_BEGIN
+
+template <typename T>
+using Reference = T&;
+
+using TypeInfo = std::type_info;
+using TypeInfoPtr = RawPtr<const TypeInfo>;
+using TypeInfoRef = Reference<const TypeInfo>;
+
+LCORE_NAMESPACE_END

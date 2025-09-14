@@ -15,13 +15,13 @@ struct __EnumComparable {
         static constexpr bool value = true; \
     };
 
-template <Enum EnumT>
+template <IsEnum EnumT>
 requires __EnumComparable<EnumT>::value
 inline static constexpr bool operator==(EnumT lhs, UnderlyingType<EnumT> rhs) {
     return static_cast<UnderlyingType<EnumT>>(lhs) == rhs;
 }
 
-template <Enum EnumT>
+template <IsEnum EnumT>
 requires __EnumComparable<EnumT>::value
 inline static constexpr bool operator!=(EnumT lhs, UnderlyingType<EnumT> rhs) {
     return static_cast<UnderlyingType<EnumT>>(lhs) != rhs;
@@ -38,7 +38,7 @@ struct __EnumBitwiseOperators {
         static constexpr bool value = true; \
     };
 
-template <Enum EnumT>
+template <IsEnum EnumT>
 requires __EnumBitwiseOperators<EnumT>::value
 inline static constexpr EnumT operator|(EnumT lhs, EnumT rhs) {
     return static_cast<EnumT>(
@@ -47,7 +47,7 @@ inline static constexpr EnumT operator|(EnumT lhs, EnumT rhs) {
     );
 }
 
-template <Enum EnumT>
+template <IsEnum EnumT>
 requires __EnumBitwiseOperators<EnumT>::value
 inline static constexpr EnumT operator&(EnumT lhs, EnumT rhs) {
     return static_cast<EnumT>(
@@ -56,7 +56,7 @@ inline static constexpr EnumT operator&(EnumT lhs, EnumT rhs) {
     );
 }
 
-template <Enum EnumT>
+template <IsEnum EnumT>
 requires __EnumBitwiseOperators<EnumT>::value
 inline static constexpr EnumT operator^(EnumT lhs, EnumT rhs) {
     return static_cast<EnumT>(
@@ -65,7 +65,7 @@ inline static constexpr EnumT operator^(EnumT lhs, EnumT rhs) {
     );
 }
 
-template <Enum EnumT>
+template <IsEnum EnumT>
 requires __EnumBitwiseOperators<EnumT>::value
 inline static constexpr EnumT operator~(EnumT value) {
     return static_cast<EnumT>(

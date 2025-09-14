@@ -6,6 +6,10 @@
 
 LCORE_NAMESPACE_BEGIN
 
+using TypeInfo = std::type_info;
+using TypeInfoPtr = const TypeInfo*;
+using TypeInfoRef = const TypeInfo&;
+
 /// @brief Demangle a type name
 /// @param name The type name
 /// @return The demangled type name

@@ -404,8 +404,8 @@ public:
         
         inline iterator(T* ptr, size_t stride): ptr_(ptr), stride_(stride) {}
         inline T& operator*() { return *ptr_; }
-        inline iterator& operator++() { reinterpret_cast<const char*>(ptr_) += stride_; return *this; }
-        inline iterator operator++(int) { iterator tmp = *this; reinterpret_cast<const char*>(ptr_) += stride_; return tmp; }
+        inline iterator& operator++() { ptr_ = reinterpret_cast<T*>(reinterpret_cast<char*>(ptr_) + stride_); return *this; }
+        inline iterator operator++(int) { iterator tmp = *this; tmp.operator++(); return tmp; }
         inline bool operator==(const iterator& other) const { return ptr_ == other.ptr_; }
         inline bool operator!=(const iterator& other) const { return ptr_ != other.ptr_; }
     };
@@ -421,8 +421,8 @@ public:
 
         inline const_iterator(const T* ptr, size_t stride): ptr_(ptr), stride_(stride) {}
         inline const T& operator*() const { return *ptr_; }
-        inline const_iterator& operator++() { reinterpret_cast<const char*>(ptr_) += stride_; return *this; }
-        inline const_iterator operator++(int) { const_iterator tmp = *this; reinterpret_cast<const char*>(ptr_) += stride_; return tmp; }
+        inline const_iterator& operator++() { ptr_ = reinterpret_cast<const T*>(reinterpret_cast<const char*>(ptr_) + stride_); return *this; }
+        inline const_iterator operator++(int) { const_iterator tmp = *this; tmp.operator++(); return tmp; }
         inline bool operator==(const const_iterator& other) const { return ptr_ == other.ptr_; }
         inline bool operator!=(const const_iterator& other) const { return ptr_ != other.ptr_; }
     };
@@ -438,8 +438,8 @@ public:
 
         inline reverse_iterator(T* ptr, size_t stride): ptr_(ptr), stride_(stride) {}
         inline T& operator*() { return *ptr_; }
-        inline reverse_iterator& operator++() { reinterpret_cast<const char*>(ptr_) -= stride_; return *this; }
-        inline reverse_iterator operator++(int) { reverse_iterator tmp = *this; reinterpret_cast<const char*>(ptr_) -= stride_; return tmp; }
+        inline reverse_iterator& operator++() { ptr_ = reinterpret_cast<T*>(reinterpret_cast<char*>(ptr_) - stride_); return *this; }
+        inline reverse_iterator operator++(int) { reverse_iterator tmp = *this; tmp.operator++(); return tmp; }
         inline bool operator==(const reverse_iterator& other) const { return ptr_ == other.ptr_; }
         inline bool operator!=(const reverse_iterator& other) const { return ptr_ != other.ptr_; }
     };
@@ -455,20 +455,20 @@ public:
 
         inline const_reverse_iterator(const T* ptr, size_t stride): ptr_(ptr), stride_(stride) {}
         inline const T& operator*() const { return *ptr_; }
-        inline const_reverse_iterator& operator++() { reinterpret_cast<const char*>(ptr_) -= stride_; return *this; }
-        inline const_reverse_iterator operator++(int) { const_reverse_iterator tmp = *this; reinterpret_cast<const char*>(ptr_) -= stride_; return tmp; }
+        inline const_reverse_iterator& operator++() { ptr_ = reinterpret_cast<const T*>(reinterpret_cast<const char*>(ptr_) - stride_); return *this; }
+        inline const_reverse_iterator operator++(int) { const_reverse_iterator tmp = *this; tmp.operator++(); return tmp; }
         inline bool operator==(const const_reverse_iterator& other) const { return ptr_ == other.ptr_; }
         inline bool operator!=(const const_reverse_iterator& other) const { return ptr_ != other.ptr_; }
     };
 public:
     using value_type = T;
-    using view_type = StridedView<T>;
+    using view_type = StridedSpan<T>;
 
-    inline constexpr StridedView(T* begin, T* end, size_t stride): begin_(begin), end_(end), stride_(stride) {
+    inline constexpr StridedSpan(T* begin, T* end, size_t stride): begin_(begin), end_(end), stride_(stride) {
         LCORE_ASSERT(stride_ > 0, "Stride must be greater than 0");
         LCORE_ASSERT((reinterpret_cast<uintptr_t>(end_) - reinterpret_cast<uintptr_t>(begin_)) % stride_ == 0, "Invalid stride for the given range");
     }
-    inline constexpr StridedView(T* begin, size_t count, size_t stride): begin_(begin), end_(reinterpret_cast<T*>(reinterpret_cast<char*>(begin) + count * stride)), stride_(stride) {
+    inline constexpr StridedSpan(T* begin, size_t count, size_t stride): begin_(begin), end_(reinterpret_cast<T*>(reinterpret_cast<char*>(begin) + count * stride)), stride_(stride) {
         LCORE_ASSERT(stride_ > 0, "Stride must be greater than 0");
     }
 

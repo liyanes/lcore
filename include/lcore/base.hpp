@@ -25,10 +25,10 @@
 LCORE_NAMESPACE_BEGIN
 
 template <typename T>
-using Reference = T&;
+using Ref = T&;
 
 using TypeInfo = std::type_info;
 using TypeInfoPtr = RawPtr<const TypeInfo>;
-using TypeInfoRef = Reference<const TypeInfo>;
+using TypeInfoRef = Ref<const TypeInfo>;
 
 LCORE_NAMESPACE_END

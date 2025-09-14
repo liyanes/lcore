@@ -1,5 +1,5 @@
 #pragma once
-#include "lcore/base.hpp"
+#include "config.h"
 #include <iostream>
 
 #ifdef LCORE_DEBUG

@@ -38,7 +38,7 @@ public:
     };
 protected:
     Vector<StructKeyInfo> m_keys;
-    void* (*CopyConstruct)(void* dest, const void* src) = nullptr;
+    void (*CopyConstruct)(void* dest, const void* src) = nullptr;
     void (*Destruct)(void* obj) = nullptr;
     
     static void Register(StructMetaBase* meta) { 
@@ -46,7 +46,7 @@ protected:
     }
     StructMetaBase(const std::type_info* typeInfo, size_t size) : m_typeInfo(typeInfo), m_size(size) { Register(this); }
 
-    void SetCopyConstruct(void* (*func)(void* dest, const void* src)) { this->CopyConstruct = func; }
+    void SetCopyConstruct(void (*func)(void* dest, const void* src)) { this->CopyConstruct = func; }
     void SetDestruct(void (*func)(void* obj)) { this->Destruct = func; }
 public:
     StructMetaBase(const StructMetaBase&) = delete;
@@ -115,7 +115,7 @@ class StructMeta final: public StructMetaBase<MarkType, NameType> {
     using StructType = T;
 public:
     StructMeta() : StructMetaBase<MarkType, NameType>(&typeid(T), sizeof(T)) {
-        this->SetCopyConstruct([](void* dest, const void* src) -> void* {
+        this->SetCopyConstruct([](void* dest, const void* src) {
             dest = new T(*reinterpret_cast<const T*>(src));
         });
         this->SetDestruct([](void* obj) {

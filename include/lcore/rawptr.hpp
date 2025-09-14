@@ -2,6 +2,13 @@
 #include "config.h"
 #include "traits.hpp"
 
+#ifdef LCORE_DEBUG
+#include "assert.hpp"
+#define _LCORE_CHECK_PTR_NOTZERO(ptr) LCORE_ASSERT(ptr, "Try to dereference a null pointer")
+#else
+#define _LCORE_CHECK_PTR_NOTZERO(ptr) do {} while (0)
+#endif
+
 LCORE_NAMESPACE_BEGIN
 
 template <typename T, typename U>

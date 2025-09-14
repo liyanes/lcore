@@ -60,6 +60,7 @@ private:
     }
 public:
     inline constexpr SparseBuffer() = default;
+    inline constexpr explicit SparseBuffer(size_type size) : total_size(size) {}
     inline constexpr SparseBuffer(const SparseBuffer&) = default;
     inline constexpr SparseBuffer(SparseBuffer&&) noexcept = default;
     inline constexpr SparseBuffer& operator=(const SparseBuffer&) = default;
@@ -120,7 +121,7 @@ public:
                 if (prev_it->second.contains(current_pos)) {
                     // Write to existing chunk
                     size_type chunk_written = std::min(data_size - written, prev_it->second.endat() - current_pos);
-                    std::copy_n(data.data() + written, chunk_written, &(*prev_it->second)[current_pos]);
+                    std::copy_n(data.data() + written, chunk_written, &prev_it->second[current_pos]);
                     written += chunk_written;
                     continue;
                 }

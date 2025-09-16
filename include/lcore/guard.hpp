@@ -12,7 +12,6 @@ public:
     ~ScopeGuard() {
         if (active) func();
     }
-    void Dismiss() { active = false; }
     ScopeGuard(const ScopeGuard&) = delete;
     ScopeGuard& operator=(const ScopeGuard&) = delete;
     ScopeGuard(ScopeGuard&& other) noexcept: active(other.active), func(std::move(other.func)) {
@@ -27,6 +26,8 @@ public:
         }
         return *this;
     }
+
+    void Dismiss() noexcept { active = false; }
 };
 
 LCORE_NAMESPACE_END
